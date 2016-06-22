@@ -96,7 +96,7 @@ public class PrefsFragmentSettings extends PreferenceFragment {
             @Override
             public boolean onPreferenceClick(Preference preference) {
                 final Intent intent = new Intent(getActivity(), ActivitySettingsPlatform.class);
-                intent.putExtra(PlatformType.class.getSimpleName(), PlatformType.AUTOSENSE_WRIST);
+                intent.putExtra(PlatformType.class.getSimpleName(), PlatformType.EASYSENSE);
                 startActivityForResult(intent, ADD_DEVICE);
                 return false;
             }
