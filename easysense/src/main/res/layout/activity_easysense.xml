@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+	<include
+		android:id="@+id/layout_three_button"
+		layout="@layout/layout_three_button" />
+
+	<LinearLayout
+		android:id="@+id/layout_preference_fragment"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout_above="@id/layout_three_button"
+		android:orientation="vertical">
+
+		<TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="Large Text"
+            android:id="@+id/textView5" />
+
+		<ScrollView
+			android:layout_width="match_parent"
+			android:layout_height="match_parent">
+
+			<TableLayout
+				android:id="@+id/tlShowInfo"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:stretchColumns="1"
+				android:background="#eeeeee" >
+
+				<TableRow
+					android:padding="5dp" >
+
+					<TextView
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Step 1:"
+						android:id="@+id/textView2" />
+
+					<TextView
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="turn on the EasySense device" />
+
+					<Button
+						style="?android:attr/buttonStyleSmall"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Done"
+						android:id="@+id/button" />
+
+				</TableRow>
+
+				<TableRow
+					android:padding="5dp" >
+
+					<TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Step 2:"
+                        android:id="@+id/textView3" />
+
+					<TextView
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Start Data Collection"
+						android:id="@+id/textView4" />
+
+					<Button
+                        style="?android:attr/buttonStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Start"
+                        android:id="@+id/button2" />
+
+				</TableRow>
+
+				<TableRow
+					android:padding="5dp" >
+					<TextView
+						android:id="@+id/tvBDAddrLabel"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Step 3:" />
+					<TextView
+						android:id="@+id/tvBDAddrValue"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:gravity="center"
+						android:text="Collecting data..." />
+
+					<ProgressBar
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:id="@+id/progressBar" />
+				</TableRow>
+
+				<TableRow
+					android:padding="5dp" >
+					<TextView
+						android:id="@+id/tvBatteryLevelLabel"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Step 4:" />
+					<TextView
+						android:id="@+id/tvBatteryLevelValue"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:gravity="center"
+						android:text="Remove EasySense Device &amp; power off" />
+
+					<Button
+						style="?android:attr/buttonStyleSmall"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Done"
+						android:id="@+id/button3" />
+				</TableRow>
+
+				<TableRow
+					android:padding="5dp" >
+					<TextView
+						android:id="@+id/tvCurrentTimeLabel"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Step 5:" />
+
+					<TextView
+						android:id="@+id/tvCurrentTimeValue"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:gravity="center"
+						android:text="Close Application" />
+
+					<Button
+						style="?android:attr/buttonStyleSmall"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Close"
+						android:id="@+id/button4" />
+				</TableRow>
+
+			</TableLayout>
+		</ScrollView>
+	</LinearLayout>
+
+</RelativeLayout>

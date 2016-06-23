@@ -44,6 +44,12 @@
             android:exported="true"
             android:label="Settings: EasySense"
             android:screenOrientation="portrait"/>
+        <activity
+            android:name=".ActivitySettingsPlatform"
+            android:enabled="true"
+            android:exported="true"
+            android:label="Settings: EasySense"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>

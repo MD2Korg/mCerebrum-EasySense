@@ -53,7 +53,7 @@ public class Device {
         this.name=name;
         sensors =new ArrayList<>();
         sensors.add(new Battery(context));
-        myBlueTooth=new MyBlueTooth(context);
+        myBlueTooth=new MyBlueTooth(context,null);
     }
     public void register() throws DataKitException {
         for (int i = 0; i < sensors.size(); i++) {

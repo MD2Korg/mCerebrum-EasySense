@@ -22,6 +22,7 @@ import android.widget.Toast;
 import org.md2k.datakitapi.source.METADATA;
 import org.md2k.datakitapi.source.platform.PlatformId;
 import org.md2k.datakitapi.source.platform.PlatformType;
+import org.md2k.easysense.bluetooth.BlueToothCallBack;
 import org.md2k.easysense.bluetooth.MyBlueTooth;
 
 import java.util.ArrayList;
@@ -67,7 +68,17 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         platformType = getActivity().getIntent().getStringExtra(PlatformType.class.getSimpleName());
-        myBlueTooth = new MyBlueTooth(getActivity());
+        myBlueTooth = new MyBlueTooth(getActivity(), new BlueToothCallBack() {
+            @Override
+            public void onConnected() {
+
+            }
+
+            @Override
+            public void onDisconnected() {
+                getActivity().finish();
+            }
+        });
         handler = new Handler();
         addPreferencesFromResource(R.xml.pref_settings_platform);
         setupListViewDevices();
@@ -251,6 +262,7 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
             isScanning = false;
             myBlueTooth.scanStop(mLeScanCallback);
         }
+        myBlueTooth.close();
         super.onDestroy();
     }
 
