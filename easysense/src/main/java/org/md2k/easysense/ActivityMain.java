@@ -17,6 +17,9 @@ import org.md2k.utilities.UI.ActivityCopyright;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.crashlytics.android.Crashlytics;
+import io.fabric.sdk.android.Fabric;
+
 /**
  * Copyright (c) 2015, The University of Memphis, MD2K Center
  * - Syed Monowar Hossain <monowar.hossain@gmail.com>
@@ -52,6 +55,7 @@ public class ActivityMain extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Fabric.with(this, new Crashlytics());
         setContentView(R.layout.activity_main);
         GridView gridview = (GridView) findViewById(R.id.gridview);
         readItems();

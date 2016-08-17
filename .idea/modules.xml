@@ -4,8 +4,6 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../mCerebrum-DataKitAPI/datakitapi/datakitapi.iml" filepath="$PROJECT_DIR$/../mCerebrum-DataKitAPI/datakitapi/datakitapi.iml" />
       <module fileurl="file://$PROJECT_DIR$/easysense/easysense.iml" filepath="$PROJECT_DIR$/easysense/easysense.iml" />
-      <module fileurl="file://$PROJECT_DIR$/easysense/easysense.iml" filepath="$PROJECT_DIR$/easysense/easysense.iml" />
-      <module fileurl="file://$PROJECT_DIR$/mCerebrum-EasySense.iml" filepath="$PROJECT_DIR$/mCerebrum-EasySense.iml" />
       <module fileurl="file://$PROJECT_DIR$/mCerebrum-EasySense.iml" filepath="$PROJECT_DIR$/mCerebrum-EasySense.iml" />
       <module fileurl="file://$PROJECT_DIR$/easysense/template.iml" filepath="$PROJECT_DIR$/easysense/template.iml" />
       <module fileurl="file://$PROJECT_DIR$/../mCerebrum-Utilities/utilities/utilities.iml" filepath="$PROJECT_DIR$/../mCerebrum-Utilities/utilities/utilities.iml" />
