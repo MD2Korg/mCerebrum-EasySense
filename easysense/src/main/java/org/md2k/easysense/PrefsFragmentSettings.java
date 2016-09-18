@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Message;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
@@ -17,10 +18,10 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import org.md2k.datakitapi.source.METADATA;
-import org.md2k.datakitapi.source.platform.PlatformId;
 import org.md2k.datakitapi.source.platform.PlatformType;
-import org.md2k.easysense.bluetooth.BlueToothCallBack;
 import org.md2k.easysense.bluetooth.MyBlueTooth;
+import org.md2k.easysense.bluetooth.OnConnectionListener;
+import org.md2k.easysense.bluetooth.OnReceiveListener;
 import org.md2k.easysense.devices.Devices;
 import org.md2k.utilities.UI.AlertDialogs;
 
@@ -60,37 +61,43 @@ public class PrefsFragmentSettings extends PreferenceFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        myBlueTooth = new MyBlueTooth(getActivity(), new BlueToothCallBack() {
-            @Override
-            public void onConnected() {
-
-            }
-
-            @Override
-            public void onDisconnected() {
-                getActivity().finish();
-            }
-        });
+        myBlueTooth = new MyBlueTooth(getActivity(), onConnectionListener,onReceiveListener);
         devices = new Devices(getActivity());
-        if (!myBlueTooth.hasSupport()) {
-            Toast.makeText(getActivity(), "Bluetooth LE is not supported", Toast.LENGTH_SHORT).show();
-            getActivity().finish();
-        } else {
-            addPreferencesFromResource(R.xml.pref_settings_general);
-            setPreferenceBluetoothPair();
-            setPreferenceScreenDeviceAdd();
-            setPreferenceScreenConfigured();
-            setSaveButton();
-            setCancelButton();
-        }
     }
+    OnConnectionListener onConnectionListener=new OnConnectionListener() {
+        @Override
+        public void onConnected() {
+            if (!myBlueTooth.hasSupport()) {
+                Toast.makeText(getActivity(), "Bluetooth LE is not supported", Toast.LENGTH_SHORT).show();
+                getActivity().finish();
+            } else {
+                addPreferencesFromResource(R.xml.pref_settings_general);
+//                setPreferenceBluetoothPair();
+                setPreferenceScreenDeviceAdd();
+                setPreferenceScreenConfigured();
+                setSaveButton();
+                setCancelButton();
+            }
+        }
+
+        @Override
+        public void onDisconnected() {
+
+        }
+    };
+    OnReceiveListener onReceiveListener = new OnReceiveListener() {
+        @Override
+        public void onReceived(Message msg) {
+
+        }
+    };
+
 
     void setPreferenceScreenConfigured() {
         for (int i = 0; i < devices.size(); i++) {
-            String platformType = devices.get(i).getPlatformType();
             String name = devices.get(i).getName();
             String deviceId = devices.get(i).getDeviceId();
-            addToConfiguredList(platformType, deviceId, name);
+            addToConfiguredList(deviceId, name);
         }
     }
 
@@ -99,19 +106,6 @@ public class PrefsFragmentSettings extends PreferenceFragment {
         if (!myBlueTooth.isEnabled())
             myBlueTooth.enable();
         super.onResume();
-    }
-
-    private void setPreferenceBluetoothPair() {
-        Preference preference = findPreference("key_bluetooth_pair");
-        preference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                Intent intent = new Intent(Intent.ACTION_MAIN, null);
-                intent.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
-                startActivity(intent);
-                return true;
-            }
-        });
     }
 
     private void setPreferenceScreenDeviceAdd() {
@@ -137,15 +131,17 @@ public class PrefsFragmentSettings extends PreferenceFragment {
                 String name = data.getStringExtra(METADATA.NAME);
                 if (devices.find(deviceId) != null)
                     Toast.makeText(getActivity(), "Error: Device is already configured...", Toast.LENGTH_SHORT).show();
+                else if (devices.find(null) != null)
+                    Toast.makeText(getActivity(), "Error: A device is already configured with same placement...", Toast.LENGTH_SHORT).show();
                 else {
                     devices.add(platformType, deviceId, name);
-                    addToConfiguredList(platformType, deviceId, name);
+                    addToConfiguredList(deviceId, name);
                 }
             }
         }
     }
 
-    private void addToConfiguredList(String platformType, String deviceId, String name) {
+    private void addToConfiguredList(String deviceId, String name) {
         PreferenceCategory category = (PreferenceCategory) findPreference("key_device_configured");
         Preference preference = new Preference(getActivity());
         preference.setKey(deviceId);
@@ -188,7 +184,7 @@ public class PrefsFragmentSettings extends PreferenceFragment {
 
     private void setCancelButton() {
         final Button button = (Button) getActivity().findViewById(R.id.button_2);
-        button.setText("Close");
+        button.setText(R.string.button_close);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 getActivity().finish();
@@ -198,7 +194,7 @@ public class PrefsFragmentSettings extends PreferenceFragment {
 
     private void setSaveButton() {
         final Button button = (Button) getActivity().findViewById(R.id.button_1);
-        button.setText("Save");
+        button.setText(R.string.button_save);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 try {
@@ -234,6 +230,7 @@ public class PrefsFragmentSettings extends PreferenceFragment {
     }
     @Override
     public void onDestroy(){
+        myBlueTooth.disconnect();
         myBlueTooth.close();
         super.onDestroy();
     }

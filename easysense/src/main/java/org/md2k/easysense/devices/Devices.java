@@ -57,6 +57,12 @@ public class Devices {
         return devices.get(i);
     }
 
+    public Device get(String deviceId) {
+        for (int i = 0; i < devices.size(); i++)
+            if (devices.get(i).getDeviceId().equals(deviceId)) return devices.get(i);
+        return null;
+    }
+
     private void readDataSourceFromFile() {
         try {
             ArrayList<DataSource> dataSources = Configuration.getDataSources();
@@ -64,7 +70,6 @@ public class Devices {
             for (int i = 0; i < dataSources.size(); i++) {
                 String deviceId = dataSources.get(i).getPlatform().getMetadata().get(METADATA.DEVICE_ID);
                 String name = dataSources.get(i).getPlatform().getMetadata().get(METADATA.NAME);
-                String platformId = dataSources.get(i).getPlatform().getId();
                 String platformType = dataSources.get(i).getPlatform().getType();
                 Device device = find(deviceId);
                 if (device == null) {
@@ -73,7 +78,7 @@ public class Devices {
                 }
             }
         } catch (FileNotFoundException e) {
-            Toast.makeText(context, "AutoSenseBluetooth device is not configured", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "EasySense device is not configured", Toast.LENGTH_LONG).show();
         }
     }
 

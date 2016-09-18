@@ -1,10 +1,11 @@
 package org.md2k.easysense;
 
-import android.bluetooth.BluetoothAdapter;
+import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.util.Log;
@@ -20,12 +21,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.md2k.datakitapi.source.METADATA;
-import org.md2k.datakitapi.source.platform.PlatformId;
 import org.md2k.datakitapi.source.platform.PlatformType;
-import org.md2k.easysense.bluetooth.BlueToothCallBack;
 import org.md2k.easysense.bluetooth.MyBlueTooth;
+import org.md2k.easysense.bluetooth.OnConnectionListener;
+import org.md2k.easysense.bluetooth.OnReceiveListener;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 /*
  * Copyright (c) 2015, The University of Memphis, MD2K Center
@@ -58,36 +60,62 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
     public static final String TAG = PrefsFragmentSettingsPlatform.class.getSimpleName();
     private static final long SCAN_PERIOD = 10000;
     String deviceId = "", platformType;
-    private ArrayAdapter<String> adapterDevices;
-    private ArrayList<String> devices = new ArrayList<>();
-    private MyBlueTooth myBlueTooth;
     Handler handler;
     boolean isScanning;
+    private ArrayAdapter<String> adapterDevices;
+    private ArrayList<String> devices = new ArrayList<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         platformType = getActivity().getIntent().getStringExtra(PlatformType.class.getSimpleName());
-        myBlueTooth = new MyBlueTooth(getActivity(), new BlueToothCallBack() {
-            @Override
-            public void onConnected() {
-
-            }
-
-            @Override
-            public void onDisconnected() {
-                getActivity().finish();
-            }
-        });
-        handler = new Handler();
-        addPreferencesFromResource(R.xml.pref_settings_platform);
-        setupListViewDevices();
-        setupPreferenceDeviceId();
-        setAddButton();
-        setCancelButton();
-        setScanButton();
-        scanLeDevice();
+        myBlueTooth = new MyBlueTooth(getActivity(), onConnectionListener, onReceiveListener);
     }
+
+    OnReceiveListener onReceiveListener = new OnReceiveListener() {
+        @Override
+        public void onReceived(Message msg) {
+            switch (msg.what) {
+                case MyBlueTooth.MSG_ADV_CATCH_DEV:
+                    BluetoothDevice device = (BluetoothDevice) msg.obj;
+                    String name;
+                    if (device.getName() == null || device.getName().length() == 0)
+                        name = device.getAddress();
+                    else
+                        name = device.getName() + " (" + device.getAddress() + ")";
+                    for (int i = 0; i < devices.size(); i++)
+                        if (devices.get(i).equals(name))
+                            return;
+                    devices.add(name);
+                    adapterDevices.notifyDataSetChanged();
+                    break;
+            }
+        }
+    };
+    private MyBlueTooth myBlueTooth;
+    OnConnectionListener onConnectionListener = new OnConnectionListener() {
+        @Override
+        public void onConnected() {
+            if (!myBlueTooth.isEnabled())
+                getActivity().finish();
+            else {
+                handler = new Handler();
+                addPreferencesFromResource(R.xml.pref_settings_platform);
+                setupListViewDevices();
+                setupPreferenceDeviceId();
+                setAddButton();
+                setCancelButton();
+                setScanButton();
+                scanLeDevice();
+            }
+
+        }
+
+        @Override
+        public void onDisconnected() {
+
+        }
+    };
 
     private void scanLeDevice() {
         // Stops scanning after a pre-defined scan period.
@@ -95,42 +123,16 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
             @Override
             public void run() {
                 isScanning = false;
-                myBlueTooth.scanStop(mLeScanCallback);
+                myBlueTooth.scanOff();
                 setScanButton();
             }
         }, SCAN_PERIOD);
 
         isScanning = true;
-        myBlueTooth.scanStart(mLeScanCallback);
+        myBlueTooth.disconnect();
+        myBlueTooth.scanOn(new UUID[]{Constants.DEVICE_SERVICE_UUID});
         setScanButton();
     }
-
-    // Device scan callback.
-    private BluetoothAdapter.LeScanCallback mLeScanCallback =
-            new BluetoothAdapter.LeScanCallback() {
-
-                @Override
-                public void onLeScan(final BluetoothDevice device, int rssi, final byte[] scanRecord) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Log.d("abc", "devicename=" + device.getName() + " deviceaddress=" + device.getAddress() + " " + " scanrecord=" + scanRecord.length + " device=" + device.getUuids());
-                            String name;
-                            if (!myBlueTooth.hasUUID(scanRecord, Constants.DEVICE_SERVICE_UUID))
-                                return;
-                            if (device.getName() == null || device.getName().length() == 0)
-                                name = device.getAddress();
-                            else
-                                name = device.getName() + " (" + device.getAddress() + ")";
-                            for (int i = 0; i < devices.size(); i++)
-                                if (devices.get(i).equals(name))
-                                    return;
-                            devices.add(name);
-                            adapterDevices.notifyDataSetChanged();
-                        }
-                    });
-                }
-            };
 
     void setupListViewDevices() {
         adapterDevices = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_single_choice,
@@ -149,7 +151,6 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
         });
     }
 
-
     private void setupPreferenceDeviceId() {
         Preference preference = findPreference("deviceId");
         preference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
@@ -166,7 +167,7 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
 
     private void setAddButton() {
         final Button button = (Button) getActivity().findViewById(R.id.button_1);
-        button.setText("Save");
+        button.setText(R.string.button_save);
 
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -177,35 +178,37 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
                     returnIntent.putExtra(PlatformType.class.getSimpleName(), platformType);
                     returnIntent.putExtra(METADATA.DEVICE_ID, getDeviceId(deviceId));
                     returnIntent.putExtra(METADATA.NAME, getName((deviceId)));
-                    getActivity().setResult(getActivity().RESULT_OK, returnIntent);
+                    getActivity().setResult(Activity.RESULT_OK, returnIntent);
                     getActivity().finish();
                 }
             }
         });
     }
-    private String getName(String str){
-        if(str.endsWith(")")){
+
+    private String getName(String str) {
+        if (str.endsWith(")")) {
             String[] arr = str.split(" ");
             return arr[0];
-        }else
+        } else
             return null;
     }
-    private String getDeviceId(String str){
-        if(str.endsWith(")")){
+
+    private String getDeviceId(String str) {
+        if (str.endsWith(")")) {
             String[] arr = deviceId.split(" ");
-            return arr[1].substring(1,arr[1].length()-1);
-        }else
+            return arr[1].substring(1, arr[1].length() - 1);
+        } else
             return str;
     }
 
     private void setCancelButton() {
         final Button button = (Button) getActivity().findViewById(R.id.button_3);
-        button.setText("Close");
+        button.setText(R.string.button_close);
 
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Intent returnIntent = new Intent();
-                getActivity().setResult(getActivity().RESULT_CANCELED, returnIntent);
+                getActivity().setResult(Activity.RESULT_CANCELED, returnIntent);
                 getActivity().finish();
             }
         });
@@ -215,15 +218,15 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
         try {
             final Button button = (Button) getActivity().findViewById(R.id.button_2);
             if (isScanning) {
-                button.setText("Scanning...");
+                button.setText(R.string.button_scanning);
                 button.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         isScanning = false;
-                        myBlueTooth.scanStop(mLeScanCallback);
+                        myBlueTooth.scanOff();
                     }
                 });
             } else {
-                button.setText("Scan");
+                button.setText(R.string.button_scan);
                 button.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         scanLeDevice();
@@ -260,10 +263,10 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
     public void onDestroy() {
         if (isScanning) {
             isScanning = false;
-            myBlueTooth.scanStop(mLeScanCallback);
+            myBlueTooth.scanOff();
         }
+        myBlueTooth.disconnect();
         myBlueTooth.close();
         super.onDestroy();
     }
-
 }

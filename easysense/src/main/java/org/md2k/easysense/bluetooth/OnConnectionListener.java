@@ -1,9 +1,7 @@
-package org.md2k.easysense;
+package org.md2k.easysense.bluetooth;
 
-import java.util.UUID;
-
-/*
- * Copyright (c) 2015, The University of Memphis, MD2K Center
+/**
+ * Copyright (c) 2016, The University of Memphis, MD2K Center
  * - Syed Monowar Hossain <monowar.hossain@gmail.com>
  * All rights reserved.
  *
@@ -28,12 +26,7 @@ import java.util.UUID;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-public class Constants {
-    public static final UUID DEVICE_SERVICE_UUID = UUID.fromString("ef1a10d8-0000-1000-8000-00805f9b34fb");
-    public static final UUID IMU_SERVICE_UUID = UUID.fromString("da395d22-1d81-48e2-9c68-d0ae4bbd351f");
-    public static final UUID BATTERY_SERVICE_UUID = UUID.fromString("da39adf0-1d81-48e2-9c68-d0ae4bbd351f");
-    public static final UUID BATTERY_SERV_CHAR_UUID = UUID.fromString("00002A19-0000-1000-8000-00805f9b34fb");
-    public static final UUID IMU_SERV_CHAR_UUID = UUID.fromString("850a75ab-0000-1000-8000-00805f9b34fb");
-
-    public static final UUID CONFIG_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+public interface OnConnectionListener {
+    void onConnected();
+    void onDisconnected();
 }

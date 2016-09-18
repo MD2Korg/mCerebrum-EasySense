@@ -6,7 +6,6 @@ import org.md2k.datakitapi.exception.DataKitException;
 import org.md2k.datakitapi.source.METADATA;
 import org.md2k.datakitapi.source.platform.Platform;
 import org.md2k.datakitapi.source.platform.PlatformBuilder;
-import org.md2k.easysense.bluetooth.MyBlueTooth;
 import org.md2k.easysense.devices.sensor.Battery;
 import org.md2k.easysense.devices.sensor.Sensor;
 
@@ -44,7 +43,6 @@ public class Device {
     protected Context context;
     protected String name;
     protected ArrayList<Sensor> sensors;
-    MyBlueTooth myBlueTooth;
 
     public Device(Context context, String platformType, String deviceId, String name) {
         this.context = context;
@@ -53,18 +51,20 @@ public class Device {
         this.name=name;
         sensors =new ArrayList<>();
         sensors.add(new Battery(context));
-        myBlueTooth=new MyBlueTooth(context,null);
     }
     public void register() throws DataKitException {
+        Platform platform = createPlatform();
         for (int i = 0; i < sensors.size(); i++) {
-            sensors.get(i).register(createPlatform());
+            sensors.get(i).register(platform);
         }
     }
+
     public void unregister() throws DataKitException {
         for (int i = 0; i < sensors.size(); i++) {
             sensors.get(i).unregister();
         }
     }
+
     public Platform createPlatform(){
         return new PlatformBuilder().setType(platformType)
                 .setMetadata(METADATA.DEVICE_ID, deviceId).setMetadata(METADATA.NAME, name).build();
@@ -73,6 +73,7 @@ public class Device {
     public String getPlatformType() {
         return platformType;
     }
+
 
     public String getDeviceId() {
         return deviceId;
@@ -84,5 +85,12 @@ public class Device {
 
     public ArrayList<Sensor> getSensors() {
         return sensors;
+    }
+
+    public Sensor getSensor(String type) {
+        for(int i=0;i<sensors.size();i++)
+            if(sensors.get(i).getDataSourceType().equals(type))
+                return sensors.get(i);
+        return null;
     }
 }

@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
 
     <application
@@ -39,10 +40,10 @@
             >
         </activity>
         <activity
-            android:name=".ActivitySettingsPlatform"
+            android:name=".ActivityEasySense"
             android:enabled="true"
             android:exported="true"
-            android:label="Settings: EasySense"
+            android:label="EasySense Reading"
             android:screenOrientation="portrait"/>
         <activity
             android:name=".ActivitySettingsPlatform"
@@ -50,6 +51,14 @@
             android:exported="true"
             android:label="Settings: EasySense"
             android:screenOrientation="portrait"/>
+        <activity
+            android:name="org.md2k.utilities.permission.ActivityPermission"
+            android:enabled="true"
+            android:exported="true"
+            android:label="Permission"
+            android:screenOrientation="portrait" />
+        <service android:name="org.md2k.easysense.bluetooth.BleService" android:enabled="true"/>
+
     </application>
 
 </manifest>

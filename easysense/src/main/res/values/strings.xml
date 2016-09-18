@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">EasySense</string>
+    <string name="button_save">Save</string>
+    <string name="button_close">Close</string>
+    <string name="button_scanning">Scanning&#8230;</string>
+    <string name="button_scan">Scan</string>
+    <string name="button_next">Next</string>
 </resources>
