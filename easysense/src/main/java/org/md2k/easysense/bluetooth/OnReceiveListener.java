@@ -29,5 +29,5 @@ import android.os.Message;
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 public interface OnReceiveListener {
-    public void onReceived(Message msg);
+    void onReceived(Message msg);
 }

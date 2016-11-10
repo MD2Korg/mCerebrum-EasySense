@@ -166,7 +166,7 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
     }
 
     private void setAddButton() {
-        final Button button = (Button) getActivity().findViewById(R.id.button_1);
+        final Button button = (Button) getActivity().findViewById(R.id.button_3);
         button.setText(R.string.button_save);
 
         button.setOnClickListener(new View.OnClickListener() {
@@ -202,7 +202,7 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
     }
 
     private void setCancelButton() {
-        final Button button = (Button) getActivity().findViewById(R.id.button_3);
+        final Button button = (Button) getActivity().findViewById(R.id.button_1);
         button.setText(R.string.button_close);
 
         button.setOnClickListener(new View.OnClickListener() {

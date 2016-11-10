@@ -1,18 +1,14 @@
 package org.md2k.easysense;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.GridView;
+import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
 import com.github.paolorotolo.appintro.AppIntro;
@@ -22,15 +18,15 @@ import org.md2k.datakitapi.exception.DataKitException;
 import org.md2k.datakitapi.messagehandler.OnConnectionListener;
 import org.md2k.datakitapi.messagehandler.ResultCallback;
 import org.md2k.datakitapi.source.platform.PlatformType;
-import org.md2k.easysense.configuration.Configuration;
+import org.md2k.easysense.bluetooth.MyBlueTooth;
+import org.md2k.easysense.bluetooth.OnReceiveListener;
+import org.md2k.easysense.devices.Devices;
 import org.md2k.utilities.Report.Log;
-import org.md2k.utilities.UI.ActivityAbout;
-import org.md2k.utilities.UI.ActivityCopyright;
 import org.md2k.utilities.UI.AlertDialogs;
 import org.md2k.utilities.permission.PermissionInfo;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.ByteBuffer;
+import java.util.UUID;
 
 /**
  * Copyright (c) 2015, The University of Memphis, MD2K Center
@@ -61,7 +57,11 @@ import java.util.List;
 
 public class ActivityEasySense extends AppIntro {
     private static final String TAG = ActivityEasySense.class.getSimpleName();
+    public static final String DATA = "data";
     private DataKitAPI dataKitAPI = null;
+    public static final String INTENT_RECEIVED_DATA="intent_received_data";
+    Devices devices;
+    MyBlueTooth myBlueTooth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,9 +81,10 @@ public class ActivityEasySense extends AppIntro {
         if (getSupportActionBar() != null)
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
-    void load(){
 
-        if (Configuration.getDeviceAddress(PlatformType.EASYSENSE) == null) {
+    void load() {
+        devices = new Devices(ActivityEasySense.this);
+        if (devices.size() == 0) {
             Toast.makeText(this, "ERROR: EasySense device is not configured...", Toast.LENGTH_SHORT).show();
             finish();
         } else {
@@ -103,12 +104,14 @@ public class ActivityEasySense extends AppIntro {
             setSwipeLock(true);
             setDoneText("");
             setNextArrowColor(ContextCompat.getColor(ActivityEasySense.this, R.color.teal_500));
-            addSlide(Fragment_1_Info.newInstance(PlatformType.EASYSENSE, "Measure Chest", "Please put on chest device and click start", R.drawable.ic_easysense_teal_48dp));
-            addSlide(Fragment_2_Connect_BP.newInstance(PlatformType.EASYSENSE, "Connecting Device...", "Trying to connect chest device...", R.drawable.ic_easysense_teal_48dp));
-            addSlide(Fragment_3_Read_BP.newInstance("Blood Pressure Reading"));
-            addSlide(Fragment_4_Success.newInstance(PlatformType.EASYSENSE, "!!! Thank you !!!", "Chest measurement is completed", R.drawable.ic_ok_teal_50dp));
+            addSlide(Fragment_1_Info.newInstance("Measure Chest", "Please TURN ON the chest device and click next", R.drawable.ic_easysense_teal_48dp));
+            addSlide(Fragment_2_Connect.newInstance("Connecting Device...", "Trying to connect chest device...", R.drawable.ic_easysense_teal_48dp));
+            addSlide(Fragment_3_Start.newInstance("Device Connected.", "Please start your reading...", R.drawable.ic_easysense_teal_48dp));
+            addSlide(Fragment_4_Reading.newInstance("Reading ...", "Please hold on until it is completed", R.drawable.ic_easysense_teal_48dp));
+            addSlide(Fragment_5_Success.newInstance("!!! Thank you !!!", "Chest measurement is completed", R.drawable.ic_ok_teal_50dp));
         }
     }
+
     @Override
     public void onSkipPressed(Fragment currentFragment) {
         super.onSkipPressed(currentFragment);
@@ -116,6 +119,12 @@ public class ActivityEasySense extends AppIntro {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (which == DialogInterface.BUTTON_POSITIVE) {
+                    if (myBlueTooth != null) {
+                        myBlueTooth.disconnect();
+                        myBlueTooth.scanOff();
+                        myBlueTooth.close();
+                        myBlueTooth = null;
+                    }
                     finish();
                 }
             }
@@ -144,40 +153,12 @@ public class ActivityEasySense extends AppIntro {
     public void onSlideChanged(@Nullable Fragment oldFragment, @Nullable Fragment newFragment) {
         super.onSlideChanged(oldFragment, newFragment);
         if (oldFragment != null) {
-            if (oldFragment instanceof Fragment_1_Info) {
-                Fragment_1_Info fragment = (Fragment_1_Info) oldFragment;
-                fragment.stop();
-            }
-            if (oldFragment instanceof Fragment_2_Connect_BP) {
-                Fragment_2_Connect_BP fragment = (Fragment_2_Connect_BP) oldFragment;
-                fragment.stop();
-            }
-            if (oldFragment instanceof Fragment_3_Read_BP) {
-                Fragment_3_Read_BP fragment = (Fragment_3_Read_BP) oldFragment;
-                fragment.stop();
-            }
-            if (oldFragment instanceof Fragment_4_Success) {
-                Fragment_4_Success fragment = (Fragment_4_Success) oldFragment;
-                fragment.stop();
-            }
+            Fragment_Base fb = (Fragment_Base) oldFragment;
+            fb.stop();
         }
         if (newFragment != null) {
-            if (newFragment instanceof Fragment_1_Info) {
-                Fragment_1_Info fragment = (Fragment_1_Info) newFragment;
-                fragment.start();
-            }
-            if (newFragment instanceof Fragment_2_Connect_BP) {
-                Fragment_2_Connect_BP fragment = (Fragment_2_Connect_BP) newFragment;
-                fragment.start();
-            }
-            if (newFragment instanceof Fragment_3_Read_BP) {
-                Fragment_3_Read_BP fragment = (Fragment_3_Read_BP) newFragment;
-                fragment.start();
-            }
-            if (newFragment instanceof Fragment_4_Success) {
-                Fragment_4_Success fragment = (Fragment_4_Success) newFragment;
-                fragment.start();
-            }
+            Fragment_Base fb = (Fragment_Base) newFragment;
+            fb.start();
         }
         Log.d("abc", "old=" + oldFragment + " new=" + newFragment);
     }
@@ -187,15 +168,55 @@ public class ActivityEasySense extends AppIntro {
         if (dataKitAPI != null) {
             dataKitAPI.disconnect();
         }
-/*
         if (myBlueTooth != null) {
             myBlueTooth.disconnect();
             myBlueTooth.scanOff();
             myBlueTooth.close();
             myBlueTooth = null;
         }
-*/
         super.onDestroy();
     }
+
+    OnReceiveListener onReceiveListener = new OnReceiveListener() {
+        @Override
+        public void onReceived(Message msg) {
+            Log.d(TAG, "msg = " + msg.what);
+            switch (msg.what) {
+                case MyBlueTooth.MSG_ADV_CATCH_DEV:
+                    BluetoothDevice bluetoothDevice = (BluetoothDevice) msg.obj;
+                    if (bluetoothDevice.getAddress().equals(devices.get(0).getDeviceId()))
+                        myBlueTooth.connect((BluetoothDevice) msg.obj);
+                    break;
+                case MyBlueTooth.MSG_CONNECTED:
+                    nextSlide();
+                    break;
+
+                case MyBlueTooth.MSG_DATA_RECV:
+                    Log.d(TAG,"received..."+msg.obj.toString());
+                    Intent intent = new Intent(INTENT_RECEIVED_DATA);
+                    BlData blData= (BlData) msg.obj;
+                    int value = 0;
+                    for (int i = 0; i < blData.getData().length; i++)
+                    {
+                        value += ((long) blData.getData()[i] & 0xffL) << (8 * i);
+                    }
+                    intent.putExtra(DATA,value);
+                    LocalBroadcastManager.getInstance(ActivityEasySense.this).sendBroadcast(intent);
+                    break;
+            }
+        }
+    };
+    org.md2k.easysense.bluetooth.OnConnectionListener onConnectionListener = new org.md2k.easysense.bluetooth.OnConnectionListener() {
+        @Override
+        public void onConnected() {
+            UUID uuid = Constants.DEVICE_SERVICE_UUID;
+            myBlueTooth.scanOn(new UUID[]{uuid});
+        }
+
+        @Override
+        public void onDisconnected() {
+
+        }
+    };
 
 }

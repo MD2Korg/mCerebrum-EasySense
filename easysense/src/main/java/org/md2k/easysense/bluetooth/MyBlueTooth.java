@@ -56,21 +56,21 @@ public class MyBlueTooth {
     public static final int MSG_DATA_RECV = 3;
     public static final int MSG_ADV_CATCH_DEV = 4;
     public static final int MSG_SCAN_CANCEL = 5;
-    public static final int MSG_CTS_DATA_RECV = 7;
-    public static final int MSG_BPF_DATA_RECV = 9;
-    public static final int MSG_WSF_DATA_RECV = 11;
-    public static final int BLE_STATE_IDLE = 0;
+    private static final int MSG_CTS_DATA_RECV = 7;
+    private static final int MSG_BPF_DATA_RECV = 9;
+    private static final int MSG_WSF_DATA_RECV = 11;
+    private static final int BLE_STATE_IDLE = 0;
     public static final int BLE_STATE_SCANNING = 1;
-    public static final int BLE_STATE_CONNECTING = 2;
-    public static final int BLE_STATE_CONNECT = 3;
+    private static final int BLE_STATE_CONNECTING = 2;
+    private static final int BLE_STATE_CONNECT = 3;
     public static final int BLE_STATE_DATA_RECV = 4;
     private static final String TAG = MyBlueTooth.class.getSimpleName();
-    public int mBleState = BLE_STATE_IDLE;
-    protected BleService mBleService;
-    Context context;
-    OnReceiveListener onReceiveListener;
-    OnConnectionListener onConnectionListener;
-    protected ServiceConnection mConnection = new ServiceConnection() {
+    private int mBleState = BLE_STATE_IDLE;
+    private BleService mBleService;
+    private Context context;
+    private OnReceiveListener onReceiveListener;
+    private OnConnectionListener onConnectionListener;
+    private ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             Log.d(TAG, "[IN]onServiceConnected");
             onBleServiceConnected(service);
@@ -108,9 +108,8 @@ public class MyBlueTooth {
             }
         }
     };
-    boolean isConnected;
     // Event handler
-    protected Handler mHandler = new Handler() {
+    private Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
             onReceiveMessage(msg);
         }
@@ -154,27 +153,10 @@ public class MyBlueTooth {
             msg.obj = blData;
             mHandler.sendMessage(msg);
         }
-
         public void BleCtsDataRecv(byte[] data) throws RemoteException {
             Log.d(TAG, "[IN]BleCtsDataRecv");
             Message msg = new Message();
             msg.what = MSG_CTS_DATA_RECV;
-            msg.obj = data;
-            mHandler.sendMessage(msg);
-        }
-
-        public void BleBpfDataRecv(byte[] data) throws RemoteException {
-            Log.d(TAG, "[IN]BleBpfDataRecv");
-            Message msg = new Message();
-            msg.what = MSG_BPF_DATA_RECV;
-            msg.obj = data;
-            mHandler.sendMessage(msg);
-        }
-
-        public void BleWsfDataRecv(byte[] data) throws RemoteException {
-            Log.d(TAG, "[IN]BleWsfDataRecv");
-            Message msg = new Message();
-            msg.what = MSG_WSF_DATA_RECV;
             msg.obj = data;
             mHandler.sendMessage(msg);
         }
@@ -184,7 +166,6 @@ public class MyBlueTooth {
         this.context=context;
         this.onReceiveListener=onReceiveListener;
         this.onConnectionListener=onConnectionListener;
-        isConnected=false;
         if (mBleService != null){
             mBleService.setCurrentContext(context.getApplicationContext(), mBinder);
         }
@@ -219,11 +200,16 @@ public class MyBlueTooth {
                 Log.w(TAG, "IllegalArgumentException for mReceiver" + iae.toString());
             }
 
+        try {
         if(mConnection!= null)
             context.unbindService(mConnection);
+        }catch (Exception ignored){
+
+        }
     }
 
     public void disconnect() {
+        Log.d(TAG,"Disconnect..");
         if (mBleService != null) {
             mBleService.BleDisconnect();
         }
@@ -233,9 +219,7 @@ public class MyBlueTooth {
         BluetoothAdapter mBluetoothAdapter=((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
         if (mBluetoothAdapter == null) return;
         if (!mBluetoothAdapter.isEnabled()) {
-            Intent btIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            btIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(btIntent);
+            mBluetoothAdapter.enable();
         }
     }
 
@@ -259,20 +243,18 @@ public class MyBlueTooth {
         return mBluetoothAdapter != null;
     }
 
-    protected void onReceiveMessage(Message msg) {
+    private void onReceiveMessage(Message msg) {
         switch (msg.what) {
             case MSG_CONNECTING:
                 break;
 
             case MSG_CONNECTED:
                 Log.d(TAG, "[LOG]MSG_CONNECTED");
-                isConnected = true;
                 onReceiveListener.onReceived(msg);
                 break;
 
             case MSG_DISCONNECTED:
                 Log.d(TAG, "[LOG]MSG_DISCONNECTED");
-                isConnected = false;
                 onReceiveListener.onReceived(msg);
                 break;
 
@@ -288,7 +270,7 @@ public class MyBlueTooth {
         }
     }
 
-    protected void onBleServiceConnected(IBinder service) {
+    private void onBleServiceConnected(IBinder service) {
         Log.d(TAG, "[IN]onBleReceiveMessage");
         mBleService = ((BleService.MyServiceLocalBinder)service).getService();
         mBleService.setCurrentContext(context.getApplicationContext(), mBinder);
@@ -297,14 +279,8 @@ public class MyBlueTooth {
             onConnectionListener.onConnected();
     }
 
-    public void disconnect(String deviceId) {
-        if (mBleService != null) {
-            mBleService.BleDisconnect(deviceId);
-        }
-    }
-    public void connect(String deviceId) {
-        if (mBleService != null) {
-            mBleService.BleDisconnect(deviceId);
-        }
+    public void writeCharacteristic(){
+        if(mBleService!=null)
+            mBleService.write();
     }
 }

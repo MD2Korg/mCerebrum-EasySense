@@ -12,7 +12,5 @@ interface IBleListener {
 	void BleDisConnected();
 	void BleDataRecv(in BlData blData);
 	void BleCtsDataRecv(in byte[] data);
-	void BleBpfDataRecv(in byte[] data);
 	void BleAdvCatchDevice(in BluetoothDevice dev);
-	void BleWsfDataRecv(in byte[] data);
 }

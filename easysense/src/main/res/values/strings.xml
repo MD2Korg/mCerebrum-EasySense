@@ -5,4 +5,6 @@
     <string name="button_scanning">Scanning&#8230;</string>
     <string name="button_scan">Scan</string>
     <string name="button_next">Next</string>
+    <string name="button_start">Start</string>
+    <string name="retry">Retry</string>
 </resources>

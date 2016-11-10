@@ -6,7 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.github.paolorotolo.appintro.ISlidePolicy;
@@ -39,10 +38,11 @@ import org.md2k.datakitapi.source.platform.PlatformType;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-public class Fragment_1_Info extends Fragment_Base {
+public class Fragment_5_Success extends Fragment_Base {
+    public static Fragment_5_Success newInstance(String title, String message, int image) {
 
-    public static Fragment_1_Info newInstance(String title, String message, int image) {
-        Fragment_1_Info f = new Fragment_1_Info();
+
+        Fragment_5_Success f = new Fragment_5_Success();
         Bundle b = new Bundle();
         b.putString("title", title);
         b.putString("message", message);
@@ -53,20 +53,23 @@ public class Fragment_1_Info extends Fragment_Base {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_1_info, container, false);
-
+        final ActivityEasySense activity = (ActivityEasySense) getActivity();
+        View v = inflater.inflate(R.layout.fragment_4_success, container, false);
         TextView tv = (TextView) v.findViewById(R.id.text_view_title);
         tv.setText(getArguments().getString("title"));
         tv = (TextView) v.findViewById(R.id.text_view_message);
         tv.setText(getArguments().getString("message"));
-        ImageView imageView = (ImageView) v.findViewById(R.id.image_view_image);
-        imageView.setImageResource(getArguments().getInt("image"));
         Button button2 = (Button) v.findViewById(R.id.button_2);
         button2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ActivityEasySense activity = (ActivityEasySense) getActivity();
-                activity.nextSlide();
+                if(activity.myBlueTooth!=null){
+                    activity.myBlueTooth.disconnect();
+                    activity.myBlueTooth.scanOff();
+                    activity.myBlueTooth.close();
+                    activity.myBlueTooth = null;
+                }
+                getActivity().finish();
             }
         });
         return v;

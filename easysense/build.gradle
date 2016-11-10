@@ -81,4 +81,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.2.0'
     compile 'com.github.paolorotolo:appintro:4.0.0'
+    compile 'com.github.lzyzsd:circleprogress:1.1.0@aar'
 }

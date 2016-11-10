@@ -30,7 +30,7 @@ import android.os.Parcelable;
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 public class BlData implements Parcelable{
-    public static final int DATATYPE_ACLGYR=1;
+    public static final int DATATYPE_STATUS =1;
     public static final int DATATYPE_BATTERY=2;
     private String deviceId;
     private int type;

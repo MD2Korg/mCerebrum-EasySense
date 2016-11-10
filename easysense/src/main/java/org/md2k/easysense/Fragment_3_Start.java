@@ -1,17 +1,12 @@
 package org.md2k.easysense;
 
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.github.paolorotolo.appintro.ISlidePolicy;
-
-import org.md2k.datakitapi.source.platform.PlatformType;
 
 /**
  * Copyright (c) 2016, The University of Memphis, MD2K Center
@@ -39,10 +34,9 @@ import org.md2k.datakitapi.source.platform.PlatformType;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-public class Fragment_1_Info extends Fragment_Base {
-
-    public static Fragment_1_Info newInstance(String title, String message, int image) {
-        Fragment_1_Info f = new Fragment_1_Info();
+public class Fragment_3_Start extends Fragment_Base {
+    public static Fragment_3_Start newInstance(String title, String message, int image) {
+        Fragment_3_Start f = new Fragment_3_Start();
         Bundle b = new Bundle();
         b.putString("title", title);
         b.putString("message", message);
@@ -53,8 +47,7 @@ public class Fragment_1_Info extends Fragment_Base {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_1_info, container, false);
-
+        View v = inflater.inflate(R.layout.fragment_3_start, container, false);
         TextView tv = (TextView) v.findViewById(R.id.text_view_title);
         tv.setText(getArguments().getString("title"));
         tv = (TextView) v.findViewById(R.id.text_view_message);

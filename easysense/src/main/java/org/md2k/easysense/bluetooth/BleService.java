@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
@@ -15,6 +16,7 @@ import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
 import android.util.Log;
@@ -23,6 +25,7 @@ import org.md2k.easysense.BlData;
 import org.md2k.easysense.Constants;
 import org.md2k.easysense.IBleListener;
 
+import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -42,6 +45,7 @@ public class BleService extends Service {
     private static final int MSG_REQ_TIMEOUT = 3;
     private static final int MSG_SCAN_START = 4;
     private static final int MSG_SCAN_STOP = 5;
+    private static final int MSG_WRITE = 6;
     private static final int MSG_NOTIFY_ACL_CONNECTED = 10;
     private static final int MSG_NOTIFY_ACL_DISCONNECTED = 11;
     private static final int MSG_NOTIFY_BOND_NONE = 12;
@@ -66,6 +70,7 @@ public class BleService extends Service {
     private int mBleReqRetryCount = 0;
     private Timer mBleReqTimer = null;
     private boolean mBleReqExecuting = false;
+    private Handler mHandler;
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
             new BluetoothAdapter.LeScanCallback() {
                 @Override
@@ -108,21 +113,16 @@ public class BleService extends Service {
          * configuration descriptor.
          */
         private void setNotifyNextSensor(BluetoothGatt gatt) {
-            Log.d(TAG, "setNotifyNextSensor()...");
+            Log.d(TAG, "setNotifyNextSensor()..."+gatt.getService(Constants.DEVICE_SERVICE_UUID));
             BluetoothGattCharacteristic characteristic;
             switch (mState) {
                 case 0:
-                    Log.d(TAG, "Set notify pressure cal");
-                    characteristic = gatt.getService(Constants.IMU_SERVICE_UUID)
+                    Log.d(TAG, "setNotifyNextSensor()...");
+                    characteristic = gatt.getService(Constants.DEVICE_SERVICE_UUID)
                             .getCharacteristic(Constants.IMU_SERV_CHAR_UUID);
                     break;
-                case 1:
-                    Log.d(TAG, "Set notify pressure");
-                    characteristic = gatt.getService(Constants.BATTERY_SERVICE_UUID)
-                            .getCharacteristic(Constants.BATTERY_SERV_CHAR_UUID);
-                    break;
                 default:
-                    Log.i(TAG, "All Sensors Enabled");
+                    Log.d(TAG, "All Sensors Enabled");
                     return;
             }
 
@@ -177,9 +177,6 @@ public class BleService extends Service {
             if (Constants.IMU_SERV_CHAR_UUID.equals(characteristic.getUuid())) {
                 Log.d(TAG, "ACL read...");
             }
-            if (Constants.BATTERY_SERV_CHAR_UUID.equals(characteristic.getUuid())) {
-                Log.d(TAG, "Battery read...");
-            }
 
             //After reading the initial value, next we enable notifications
             setNotifyNextSensor(gatt);
@@ -192,12 +189,9 @@ public class BleService extends Service {
              * value changes will be posted here.  Similar to read, we hand these up to the
              * UI thread to update the display.
              */
+            Log.d(TAG,"onCharacteristicsChanged...");
             if (Constants.IMU_SERV_CHAR_UUID.equals(characteristic.getUuid())) {
-                BlData blData = new BlData(gatt.getDevice().getAddress(), BlData.DATATYPE_ACLGYR, characteristic.getValue());
-                mHandler.sendMessage(Message.obtain(null, MSG_DATA, blData));
-            }
-            if (Constants.BATTERY_SERV_CHAR_UUID.equals(characteristic.getUuid())) {
-                BlData blData = new BlData(gatt.getDevice().getAddress(), BlData.DATATYPE_BATTERY, characteristic.getValue());
+                BlData blData = new BlData(gatt.getDevice().getAddress(), BlData.DATATYPE_STATUS, characteristic.getValue());
                 mHandler.sendMessage(Message.obtain(null, MSG_DATA, blData));
             }
         }
@@ -230,7 +224,57 @@ public class BleService extends Service {
             }
         }
     };
-    private Handler mHandler = new Handler() {
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "[IN]BondReceiver onReceive: " + intent.getAction());
+
+            if (intent.getAction().equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)) {
+                int prev_bond_state = intent.getExtras().getInt(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE);
+                int bond_state = intent.getExtras().getInt(BluetoothDevice.EXTRA_BOND_STATE);
+                Log.i(TAG, "[LOG]ACTION_BOND_STATE_CHANGED: " + String.format("bond_state prev=%d, now=%d", prev_bond_state, bond_state));
+                if ((prev_bond_state == BluetoothDevice.BOND_BONDING) && (bond_state == BluetoothDevice.BOND_BONDED)) {
+                    Log.d(TAG, "[LOG](prev_bond_state==BluetoothDevice.BOND_BONDING)&&(bond_state==BluetoothDevice.BOND_BONDED)");
+                    Log.d(TAG, "[LOG]not Pairing Device!!!");
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    sendMessage(MSG_NOTIFY_BOND_BONDED, device);
+                }
+
+            } else if (intent.getAction().equals(BluetoothDevice.ACTION_ACL_DISCONNECTED)) {
+                Log.d(TAG, "[LOG]ACTION_ACL_DISCONNECTED");
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                sendMessage(MSG_NOTIFY_ACL_DISCONNECTED, device);
+
+            } else if (intent.getAction().equals(BluetoothDevice.ACTION_ACL_CONNECTED)) {
+                Log.d(TAG, "[LOG]ACTION_ACL_CONNECTED");
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                sendMessage(MSG_NOTIFY_ACL_CONNECTED, device);
+                sendMessage(MSG_NOTIFY_BOND_BONDED, device);
+
+            } else if (intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+                Log.d(TAG, "[LOG]ACTION_STATE_CHANGED");
+                int state = intent.getExtras().getInt(BluetoothAdapter.EXTRA_STATE);
+                if ((state == BluetoothAdapter.STATE_OFF || state == BluetoothAdapter.STATE_TURNING_OFF)
+                        && (mIsConnected || mIsACLConnected)) {
+                    sendMessage(MSG_NOTIFY_ACL_DISCONNECTED, null);
+                }
+            }
+        }
+    };
+    public void BleDisconnect(String deviceId) {
+        Log.d(TAG, "[IN]BleDisconnect");
+        Message msg = new Message();
+        msg.obj = deviceId;
+        msg.what = MSG_DISCONNECT_DEVICE;
+        mHandler.sendMessage(msg);
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.d(TAG, "[IN]onCreate");
+        handlerServiceStart = new Handler();
+        mHandler = new Handler(Looper.getMainLooper()) {
         public void handleMessage(Message msg) {
             BluetoothDevice device;
 
@@ -289,7 +333,6 @@ public class BleService extends Service {
                     break;
 
                 case MSG_CONNECT:
-
                     BluetoothDevice mBluetoothDevice = (BluetoothDevice) msg.obj;
                     String deviceAddress = mBluetoothDevice.getAddress();
                     if (bluetoothGatts.containsKey(mBluetoothDevice.getAddress())) {
@@ -322,6 +365,14 @@ public class BleService extends Service {
                     if (mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()) {
                         Log.i(TAG, "Bluetooth is disable now.");
                         releaseConnection();
+                    }
+                    break;
+                case MSG_WRITE:
+                    for (String deviceAdd : bluetoothGatts.keySet()) {
+                        BluetoothGatt mBluetoothGatt = bluetoothGatts.get(deviceAdd);
+                        if (mBluetoothGatt != null) {
+                            BleWrite(mBluetoothGatt);
+                        }
                     }
                     break;
 
@@ -399,59 +450,7 @@ public class BleService extends Service {
             }
         }
     };
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.d(TAG, "[IN]BondReceiver onReceive: " + intent.getAction());
-
-            if (intent.getAction().equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)) {
-                int prev_bond_state = intent.getExtras().getInt(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE);
-                int bond_state = intent.getExtras().getInt(BluetoothDevice.EXTRA_BOND_STATE);
-                Log.i(TAG, "[LOG]ACTION_BOND_STATE_CHANGED: " + String.format("bond_state prev=%d, now=%d", prev_bond_state, bond_state));
-                if ((prev_bond_state == BluetoothDevice.BOND_BONDING) && (bond_state == BluetoothDevice.BOND_BONDED)) {
-                    Log.d(TAG, "[LOG](prev_bond_state==BluetoothDevice.BOND_BONDING)&&(bond_state==BluetoothDevice.BOND_BONDED)");
-                    Log.d(TAG, "[LOG]not Pairing Device!!!");
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    sendMessage(MSG_NOTIFY_BOND_BONDED, device);
-                }
-
-            } else if (intent.getAction().equals(BluetoothDevice.ACTION_ACL_DISCONNECTED)) {
-                Log.d(TAG, "[LOG]ACTION_ACL_DISCONNECTED");
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                sendMessage(MSG_NOTIFY_ACL_DISCONNECTED, device);
-
-            } else if (intent.getAction().equals(BluetoothDevice.ACTION_ACL_CONNECTED)) {
-                Log.d(TAG, "[LOG]ACTION_ACL_CONNECTED");
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                sendMessage(MSG_NOTIFY_ACL_CONNECTED, device);
-                sendMessage(MSG_NOTIFY_BOND_BONDED, device);
-
-            } else if (intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-                Log.d(TAG, "[LOG]ACTION_STATE_CHANGED");
-                int state = intent.getExtras().getInt(BluetoothAdapter.EXTRA_STATE);
-                if ((state == BluetoothAdapter.STATE_OFF || state == BluetoothAdapter.STATE_TURNING_OFF)
-                        && (mIsConnected || mIsACLConnected)) {
-                    sendMessage(MSG_NOTIFY_ACL_DISCONNECTED, null);
-                }
-            }
-        }
-    };
-
-    public void BleDisconnect(String deviceId) {
-        Log.d(TAG, "[IN]BleDisconnect");
-        Message msg = new Message();
-        msg.obj = deviceId;
-        msg.what = MSG_DISCONNECT_DEVICE;
-        mHandler.sendMessage(msg);
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        Log.d(TAG, "[IN]onCreate");
-        handlerServiceStart = new Handler();
-    }
-
+}
     @Override
     public void onDestroy() {
         Log.d(TAG, "[IN]onDestroy");
@@ -493,6 +492,34 @@ public class BleService extends Service {
     public void setCurrentContext(Context c, IBleListener listener) {
         Log.d(TAG, "[IN]setCurrentContext");
         mAppListener = listener;
+    }
+    public void write(){
+            Message msg = new Message();
+            msg.what = MSG_WRITE;
+            mHandler.sendMessage(msg);
+    }
+    private boolean BleWrite(BluetoothGatt mBluetoothGatt){
+        //check mBluetoothGatt is available
+        if (mBluetoothGatt == null) {
+            Log.e(TAG, "lost connection");
+            return false;
+        }
+        BluetoothGattService Service = mBluetoothGatt.getService(Constants.DEVICE_SERVICE_UUID);
+        if (Service == null) {
+            Log.e(TAG, "service not found!");
+            return false;
+        }
+        BluetoothGattCharacteristic charac = Service
+                .getCharacteristic(Constants.IMU_SERV_CHAR_UUID);
+        if (charac == null) {
+            Log.e(TAG, "char not found!");
+            return false;
+        }
+        BigInteger bigInteger = new BigInteger(Constants.WRITE_STRING,16);
+        byte[] value = bigInteger.toByteArray();
+//        byte[] value = Constants.WRITE_STRING.getBytes();
+        charac.setValue(value);
+        return mBluetoothGatt.writeCharacteristic(charac);
     }
 
     public void BleScan(UUID[] uuids) {
