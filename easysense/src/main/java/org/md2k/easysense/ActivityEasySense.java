@@ -3,6 +3,7 @@ package org.md2k.easysense;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Message;
 import android.support.annotation.Nullable;
@@ -12,6 +13,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
 import com.github.paolorotolo.appintro.AppIntro;
+import com.mikepenz.fontawesome_typeface_library.FontAwesome;
+import com.mikepenz.iconics.IconicsDrawable;
 
 import org.md2k.datakitapi.DataKitAPI;
 import org.md2k.datakitapi.exception.DataKitException;
@@ -62,6 +65,7 @@ public class ActivityEasySense extends AppIntro {
     public static final String INTENT_RECEIVED_DATA="intent_received_data";
     Devices devices;
     MyBlueTooth myBlueTooth;
+    public String writeString="";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +97,12 @@ public class ActivityEasySense extends AppIntro {
                 dataKitAPI.connect(new OnConnectionListener() {
                     @Override
                     public void onConnected() {
+                        try {
+                            devices.register();
+                        } catch (DataKitException e) {
+                            Toast.makeText(ActivityEasySense.this, "Datakit Connection Error", Toast.LENGTH_SHORT).show();
+                            finish();
+                        }
                     }
                 });
             } catch (DataKitException e) {
@@ -104,11 +114,11 @@ public class ActivityEasySense extends AppIntro {
             setSwipeLock(true);
             setDoneText("");
             setNextArrowColor(ContextCompat.getColor(ActivityEasySense.this, R.color.teal_500));
-            addSlide(Fragment_1_Info.newInstance("Measure Chest", "Please TURN ON the chest device and click next", R.drawable.ic_easysense_teal_48dp));
-            addSlide(Fragment_2_Connect.newInstance("Connecting Device...", "Trying to connect chest device...", R.drawable.ic_easysense_teal_48dp));
-            addSlide(Fragment_3_Start.newInstance("Device Connected.", "Please start your reading...", R.drawable.ic_easysense_teal_48dp));
-            addSlide(Fragment_4_Reading.newInstance("Reading ...", "Please hold on until it is completed", R.drawable.ic_easysense_teal_48dp));
-            addSlide(Fragment_5_Success.newInstance("!!! Thank you !!!", "Chest measurement is completed", R.drawable.ic_ok_teal_50dp));
+            addSlide(Fragment_1_Info.newInstance("Power On", "Please TURN ON the chest sensor device and tap NEXT", R.drawable.ic_power_teal_48dp));
+            addSlide(Fragment_2_Connect.newInstance("Connecting Device...", "Please wait while the device is connecting", R.drawable.ic_easysense_teal_48dp));
+            addSlide(Fragment_3_Start.newInstance("Device Connected", "Hold the device to your chest and tap START", R.drawable.ic_easysense_position_teal_48dp));
+            addSlide(Fragment_4_Reading.newInstance("Reading...", "Please keep the device in place until the reading is complete.", R.drawable.ic_easysense_teal_48dp));
+            addSlide(Fragment_5_Success.newInstance("!!! Thank you !!!", "Chest measurement reading is complete. Please tap DONE.", R.drawable.ic_ok_teal_50dp));
         }
     }
 

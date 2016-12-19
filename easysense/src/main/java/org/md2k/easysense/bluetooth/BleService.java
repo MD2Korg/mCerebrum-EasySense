@@ -21,6 +21,7 @@ import android.os.Message;
 import android.os.RemoteException;
 import android.util.Log;
 
+import org.md2k.datakitapi.time.DateTime;
 import org.md2k.easysense.BlData;
 import org.md2k.easysense.Constants;
 import org.md2k.easysense.IBleListener;
@@ -371,7 +372,8 @@ public class BleService extends Service {
                     for (String deviceAdd : bluetoothGatts.keySet()) {
                         BluetoothGatt mBluetoothGatt = bluetoothGatts.get(deviceAdd);
                         if (mBluetoothGatt != null) {
-                            BleWrite(mBluetoothGatt);
+                            String writeString= (String) msg.obj;
+                            BleWrite(mBluetoothGatt, writeString);
                         }
                     }
                     break;
@@ -493,12 +495,13 @@ public class BleService extends Service {
         Log.d(TAG, "[IN]setCurrentContext");
         mAppListener = listener;
     }
-    public void write(){
+    public void write(String writeString){
             Message msg = new Message();
             msg.what = MSG_WRITE;
+            msg.obj=writeString;
             mHandler.sendMessage(msg);
     }
-    private boolean BleWrite(BluetoothGatt mBluetoothGatt){
+    private boolean BleWrite(BluetoothGatt mBluetoothGatt, String writeString){
         //check mBluetoothGatt is available
         if (mBluetoothGatt == null) {
             Log.e(TAG, "lost connection");
@@ -515,9 +518,9 @@ public class BleService extends Service {
             Log.e(TAG, "char not found!");
             return false;
         }
-        BigInteger bigInteger = new BigInteger(Constants.WRITE_STRING,16);
+
+        BigInteger bigInteger = new BigInteger(writeString,16);
         byte[] value = bigInteger.toByteArray();
-//        byte[] value = Constants.WRITE_STRING.getBytes();
         charac.setValue(value);
         return mBluetoothGatt.writeCharacteristic(charac);
     }

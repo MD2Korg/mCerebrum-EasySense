@@ -279,8 +279,8 @@ public class MyBlueTooth {
             onConnectionListener.onConnected();
     }
 
-    public void writeCharacteristic(){
+    public void writeCharacteristic(String writeString){
         if(mBleService!=null)
-            mBleService.write();
+            mBleService.write(writeString);
     }
 }

@@ -3,6 +3,7 @@ package org.md2k.easysense.devices.sensor;
 import android.content.Context;
 
 import org.md2k.datakitapi.datatype.DataTypeInt;
+import org.md2k.datakitapi.datatype.DataTypeJSONObject;
 import org.md2k.datakitapi.source.METADATA;
 import org.md2k.datakitapi.source.datasource.DataSourceBuilder;
 import org.md2k.datakitapi.source.datasource.DataSourceType;
@@ -37,30 +38,26 @@ import java.util.HashMap;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-public class Battery extends Sensor {
-    public Battery(Context context) {
-        super(context, DataSourceType.BATTERY);
+public class Status extends Sensor {
+    public Status(Context context) {
+        super(context, DataSourceType.STATUS);
     }
 
     @Override
     public DataSourceBuilder createDataSourceBuilder(Platform platform){
         DataSourceBuilder dataSourceBuilder=super.createDataSourceBuilder(platform);
-        dataSourceBuilder=dataSourceBuilder.setMetadata(METADATA.NAME, "Battery")
+        dataSourceBuilder=dataSourceBuilder.setMetadata(METADATA.NAME, "Status")
                 .setDataDescriptors(createDataDescriptors())
-                .setMetadata(METADATA.MIN_VALUE, "0")
-                .setMetadata(METADATA.MAX_VALUE, "100")
-                .setMetadata(METADATA.DATA_TYPE, DataTypeInt.class.getSimpleName())
-                .setMetadata(METADATA.DESCRIPTION, "Current battery level as a percentage from 0%% to 100%%");
+                .setMetadata(METADATA.DATA_TYPE, DataTypeJSONObject.class.getSimpleName())
+                .setMetadata(METADATA.DESCRIPTION, "Status of the EASYSENSE reading");
         return dataSourceBuilder;
     }
     ArrayList<HashMap<String, String>> createDataDescriptors() {
         ArrayList<HashMap<String, String>> dataDescriptors = new ArrayList<>();
         HashMap<String, String> dataDescriptor = new HashMap<>();
-        dataDescriptor.put(METADATA.NAME, "Batter Level");
-        dataDescriptor.put(METADATA.MIN_VALUE, "0");
-        dataDescriptor.put(METADATA.MAX_VALUE, "100");
-        dataDescriptor.put(METADATA.DESCRIPTION, "Current battery level as a percentage from 0%% to 100%%");
-        dataDescriptor.put(METADATA.DATA_TYPE, int.class.getName());
+        dataDescriptor.put(METADATA.NAME, "Status");
+        dataDescriptor.put(METADATA.DESCRIPTION, "Status(0 = Success, -1= Failure) of the easyense reading");
+        dataDescriptor.put(METADATA.DATA_TYPE, String.class.getName());
         dataDescriptors.add(dataDescriptor);
         return dataDescriptors;
     }

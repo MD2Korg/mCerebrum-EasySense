@@ -6,7 +6,7 @@ import org.md2k.datakitapi.exception.DataKitException;
 import org.md2k.datakitapi.source.METADATA;
 import org.md2k.datakitapi.source.platform.Platform;
 import org.md2k.datakitapi.source.platform.PlatformBuilder;
-import org.md2k.easysense.devices.sensor.Battery;
+import org.md2k.easysense.devices.sensor.Status;
 import org.md2k.easysense.devices.sensor.Sensor;
 
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ public class Device {
         this.deviceId = deviceId;
         this.name=name;
         sensors =new ArrayList<>();
-        sensors.add(new Battery(context));
+        sensors.add(new Status(context));
     }
     public void register() throws DataKitException {
         Platform platform = createPlatform();

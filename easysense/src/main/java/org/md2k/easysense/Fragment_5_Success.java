@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.github.paolorotolo.appintro.ISlidePolicy;
 
+import org.md2k.datakitapi.source.datasource.DataSourceType;
 import org.md2k.datakitapi.source.platform.PlatformType;
 
 /**
@@ -39,6 +40,7 @@ import org.md2k.datakitapi.source.platform.PlatformType;
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 public class Fragment_5_Success extends Fragment_Base {
+    ActivityEasySense activity;
     public static Fragment_5_Success newInstance(String title, String message, int image) {
 
 
@@ -53,7 +55,7 @@ public class Fragment_5_Success extends Fragment_Base {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final ActivityEasySense activity = (ActivityEasySense) getActivity();
+        activity = (ActivityEasySense) getActivity();
         View v = inflater.inflate(R.layout.fragment_4_success, container, false);
         TextView tv = (TextView) v.findViewById(R.id.text_view_title);
         tv.setText(getArguments().getString("title"));
@@ -76,7 +78,6 @@ public class Fragment_5_Success extends Fragment_Base {
     }
 
     public void start() {
-
     }
 
     public void stop() {

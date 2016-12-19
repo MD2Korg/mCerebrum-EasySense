@@ -30,9 +30,8 @@ import java.util.UUID;
  */
 public class Constants {
     public static final UUID DEVICE_SERVICE_UUID = UUID.fromString("ea210000-0000-1000-8000-00805f9b5d6f");
-    public static final UUID IMU_SERVICE_UUID = UUID.fromString("ea210001-0000-1000-8000-00805f9b5d6f");
     public static final UUID IMU_SERV_CHAR_UUID = UUID.fromString("ea210001-0000-1000-8000-00805f9b5d6f");
 
     public static final UUID CONFIG_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-    public static final String WRITE_STRING="3C5728C562";
+    public static final int READ_TIME_IN_SECOND = 60;
 }
