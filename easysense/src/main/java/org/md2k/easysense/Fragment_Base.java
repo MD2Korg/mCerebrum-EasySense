@@ -31,7 +31,7 @@ import com.github.paolorotolo.appintro.ISlidePolicy;
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 public abstract class Fragment_Base extends Fragment implements ISlidePolicy {
-
+    ActivityEasySense activity;
 
     @Override
     public boolean isPolicyRespected() {
@@ -42,8 +42,7 @@ public abstract class Fragment_Base extends Fragment implements ISlidePolicy {
     public void onUserIllegallyRequestedNextPage() {
 //        Toast.makeText(getContext(), R.string.slide_policy_demo_error, Toast.LENGTH_SHORT).show();
     }
-
-    public abstract void start();
-
-    public abstract void stop();
+    void setActivity(ActivityEasySense activityEasySense){
+        this.activity=activityEasySense;
+    }
 }

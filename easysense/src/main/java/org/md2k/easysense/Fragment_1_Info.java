@@ -1,17 +1,15 @@
 package org.md2k.easysense;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
 
-import com.github.paolorotolo.appintro.ISlidePolicy;
-
-import org.md2k.datakitapi.source.platform.PlatformType;
+import org.md2k.utilities.icons.Icon;
 
 /**
  * Copyright (c) 2016, The University of Memphis, MD2K Center
@@ -40,43 +38,20 @@ import org.md2k.datakitapi.source.platform.PlatformType;
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 public class Fragment_1_Info extends Fragment_Base {
-
-    public static Fragment_1_Info newInstance(String title, String message, int image) {
-        Fragment_1_Info f = new Fragment_1_Info();
-        Bundle b = new Bundle();
-        b.putString("title", title);
-        b.putString("message", message);
-        b.putInt("image", image);
-        f.setArguments(b);
+    public static Fragment_1_Info newInstance(ActivityEasySense activityEasySense) {
+        Fragment_1_Info f= new Fragment_1_Info();
+        f.setActivity(activityEasySense);
         return f;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_1_info, container, false);
-
-        TextView tv = (TextView) v.findViewById(R.id.text_view_title);
-        tv.setText(getArguments().getString("title"));
-        tv = (TextView) v.findViewById(R.id.text_view_message);
-        tv.setText(getArguments().getString("message"));
-        ImageView imageView = (ImageView) v.findViewById(R.id.image_view_image);
-        imageView.setImageResource(getArguments().getInt("image"));
-        Button button2 = (Button) v.findViewById(R.id.button_2);
-        button2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ActivityEasySense activity = (ActivityEasySense) getActivity();
-                activity.nextSlide();
-            }
-        });
+        Button button2 = (Button) v.findViewById(R.id.button_info_next);
+        button2.setOnClickListener(v1 -> activity.setState(ActivityEasySense.STATE_CONNECT));
+        Drawable drawable = Icon.get(getActivity(), Icon.Id.POWER, ContextCompat.getColor(getActivity(),R.color.teal_500), Icon.Size.EXTRA_LARGE);
+        ImageView image= (ImageView) v.findViewById(R.id.image_view_image);
+        image.setImageDrawable(drawable);
         return v;
-    }
-
-    public void start() {
-
-    }
-
-    public void stop() {
-
     }
 }

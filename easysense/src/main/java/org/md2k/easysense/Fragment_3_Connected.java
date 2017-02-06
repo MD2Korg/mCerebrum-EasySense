@@ -1,20 +1,26 @@
-package org.md2k.easysense.bluetooth;
+package org.md2k.easysense;
 
-/*
- * Copyright (c) 2015, The University of Memphis, MD2K Center
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+
+/**
+ * Copyright (c) 2016, The University of Memphis, MD2K Center
  * - Syed Monowar Hossain <monowar.hossain@gmail.com>
  * All rights reserved.
- *
+ * <p/>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * <p/>
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- *
+ * <p/>
  * * Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- *
+ * <p/>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +32,18 @@ package org.md2k.easysense.bluetooth;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-public interface BlueToothCallBack {
-    void onConnected();
-    void onDisconnected();
+public class Fragment_3_Connected extends Fragment_Base {
+    public static Fragment_3_Connected newInstance(ActivityEasySense activityEasySense) {
+        Fragment_3_Connected f= new Fragment_3_Connected();
+        f.setActivity(activityEasySense);
+        return f;
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.fragment_3_start, container, false);
+        Button button2 = (Button) v.findViewById(R.id.button_2);
+        button2.setOnClickListener(v1 -> activity.setState(ActivityEasySense.STATE_READ));
+        return v;
+    }
 }

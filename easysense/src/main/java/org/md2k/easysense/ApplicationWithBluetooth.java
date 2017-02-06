@@ -1,8 +1,5 @@
-package org.md2k.easysense.bluetooth;
-
-import android.os.Message;
-
-/**
+package org.md2k.easysense;
+/*
  * Copyright (c) 2016, The University of Memphis, MD2K Center
  * - Syed Monowar Hossain <monowar.hossain@gmail.com>
  * All rights reserved.
@@ -28,6 +25,25 @@ import android.os.Message;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-public interface OnReceiveListener {
-    void onReceived(Message msg);
+
+import com.polidea.rxandroidble.RxBleClient;
+import com.polidea.rxandroidble.internal.RxBleLog;
+
+import org.md2k.utilities.ApplicationWithLeakCanary;
+
+public class ApplicationWithBluetooth extends ApplicationWithLeakCanary {
+    private RxBleClient rxBleClient;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        rxBleClient = RxBleClient.create(getAppContext());
+        RxBleClient.setLogLevel(RxBleLog.DEBUG);
+    }
+
+    public static RxBleClient getRxBleClient() {
+        ApplicationWithBluetooth application = (ApplicationWithBluetooth) getAppContext().getApplicationContext();
+        return application.rxBleClient;
+    }
 }
+

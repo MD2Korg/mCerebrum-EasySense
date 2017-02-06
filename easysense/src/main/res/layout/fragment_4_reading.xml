@@ -29,7 +29,8 @@
             android:textColor="@color/teal_700"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:text="@string/text_reading" />
     </LinearLayout>
 
     <LinearLayout
@@ -65,7 +66,8 @@
             android:gravity="center"
             android:paddingTop="30dp"
             android:textSize="20sp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:text="@string/text_complete" />
     </LinearLayout>
 
     <LinearLayout
@@ -76,15 +78,6 @@
         android:orientation="horizontal"
         android:layout_weight=".2">
 
-        <Button
-            android:id="@+id/button_1"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:layout_weight=".5"
-            android:background="@drawable/button_teal"
-            android:visibility="invisible"
-            android:text="@string/retry" />
     </LinearLayout>
 
 </LinearLayout>

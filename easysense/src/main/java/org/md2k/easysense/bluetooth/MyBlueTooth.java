@@ -1,25 +1,24 @@
 package org.md2k.easysense.bluetooth;
 
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
-import android.os.RemoteException;
-import android.util.Log;
 
-import org.md2k.easysense.BlData;
-import org.md2k.easysense.IBleListener;
+import com.polidea.rxandroidble.RxBleClient;
+import com.polidea.rxandroidble.RxBleConnection;
+import com.polidea.rxandroidble.RxBleDevice;
+import com.polidea.rxandroidble.RxBleScanResult;
 
+import org.md2k.easysense.ApplicationWithBluetooth;
+import org.md2k.utilities.Report.Log;
+
+import java.math.BigInteger;
 import java.util.UUID;
+
+import rx.Observable;
+import rx.functions.Action1;
+import rx.functions.Func1;
 
 
 /*
@@ -50,190 +49,27 @@ import java.util.UUID;
  */
 
 public class MyBlueTooth {
-    public static final int MSG_CONNECTING = 0;
-    public static final int MSG_CONNECTED = 1;
-    public static final int MSG_DISCONNECTED = 2;
-    public static final int MSG_DATA_RECV = 3;
-    public static final int MSG_ADV_CATCH_DEV = 4;
-    public static final int MSG_SCAN_CANCEL = 5;
-    private static final int MSG_CTS_DATA_RECV = 7;
-    private static final int MSG_BPF_DATA_RECV = 9;
-    private static final int MSG_WSF_DATA_RECV = 11;
-    private static final int BLE_STATE_IDLE = 0;
-    public static final int BLE_STATE_SCANNING = 1;
-    private static final int BLE_STATE_CONNECTING = 2;
-    private static final int BLE_STATE_CONNECT = 3;
-    public static final int BLE_STATE_DATA_RECV = 4;
     private static final String TAG = MyBlueTooth.class.getSimpleName();
-    private int mBleState = BLE_STATE_IDLE;
-    private BleService mBleService;
     private Context context;
-    private OnReceiveListener onReceiveListener;
-    private OnConnectionListener onConnectionListener;
-    private ServiceConnection mConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            Log.d(TAG, "[IN]onServiceConnected");
-            onBleServiceConnected(service);
-        }
+    private RxBleClient rxBleClient;
+    private RxBleConnection rxBleConnection;
+    private RxBleDevice rxBleDevice;
+    public static final UUID DEVICE_SERVICE_UUID = UUID.fromString("ea210000-0000-1000-8000-00805f9b5d6f");
+    private static final UUID CHARACTERISTIC_WRITE = UUID.fromString("ea210001-0000-1000-8000-00805f9b5d6f");
 
-        public void onServiceDisconnected(ComponentName name) {
-            Log.d(TAG, "[IN]onServiceDisconnected");
-            mBleService = null;
-            context.unbindService(mConnection);
-            onConnectionListener.onDisconnected();
-        }
-    };
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-
-            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.ERROR);
-                switch (state) {
-                    case BluetoothAdapter.STATE_OFF:
-                        disconnect();
-                        close();
-                        onConnectionListener.onDisconnected();
-                        break;
-                    case BluetoothAdapter.STATE_TURNING_OFF:
-                        break;
-                    case BluetoothAdapter.STATE_ON:
-                        onConnectionListener.onConnected();
-                        break;
-                    case BluetoothAdapter.STATE_TURNING_ON:
-                        break;
-                }
-            }
-        }
-    };
-    // Event handler
-    private Handler mHandler = new Handler() {
-        public void handleMessage(Message msg) {
-            onReceiveMessage(msg);
-        }
-    };
-    private final IBleListener.Stub mBinder = new IBleListener.Stub() {
-        public void BleAdvCatch() throws RemoteException {
-            Log.d(TAG, "[IN]BleAdvCatch");
-            mBleState = BLE_STATE_CONNECTING;
-            Message msg = new Message();
-            msg.what = MSG_CONNECTING;
-            mHandler.sendMessage(msg);
-        }
-
-        public void BleAdvCatchDevice(BluetoothDevice dev) throws RemoteException {
-            Log.d(TAG, "[IN]BleAdvCatchDevice");
-            Message msg = new Message();
-            msg.what = MSG_ADV_CATCH_DEV;
-            msg.obj = dev;
-            mHandler.sendMessage(msg);
-        }
-
-        public void BleConnected() throws RemoteException {
-            Log.d(TAG, "[IN]BleConnected");
-            mBleState = BLE_STATE_CONNECT;
-            Message msg = new Message();
-            msg.what = MSG_CONNECTED;
-            mHandler.sendMessage(msg);
-        }
-
-        public void BleDisConnected() throws RemoteException {
-            Log.d(TAG, "[IN]BleDisConnected");
-            mBleState = BLE_STATE_IDLE;
-            Message msg = new Message();
-            msg.what = MSG_DISCONNECTED;
-            mHandler.sendMessage(msg);
-        }
-
-        public void BleDataRecv(BlData blData) throws RemoteException {
-            Message msg = new Message();
-            msg.what = MSG_DATA_RECV;
-            msg.obj = blData;
-            mHandler.sendMessage(msg);
-        }
-        public void BleCtsDataRecv(byte[] data) throws RemoteException {
-            Log.d(TAG, "[IN]BleCtsDataRecv");
-            Message msg = new Message();
-            msg.what = MSG_CTS_DATA_RECV;
-            msg.obj = data;
-            mHandler.sendMessage(msg);
-        }
-    };
-
-    public MyBlueTooth(Context context, OnConnectionListener onConnectionListener, OnReceiveListener onReceiveListener) {
-        this.context=context;
-        this.onReceiveListener=onReceiveListener;
-        this.onConnectionListener=onConnectionListener;
-        if (mBleService != null){
-            mBleService.setCurrentContext(context.getApplicationContext(), mBinder);
-        }
-        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        context.registerReceiver(mReceiver, filter);
-        context.bindService(new Intent(context, BleService.class), mConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    public void scanOn(UUID[] uuids) {
-        if (mBleService != null) {
-            mBleService.BleScan(uuids);
-        }
-    }
-
-    public void scanOff(){
-        if (mBleService != null) {
-            mBleService.BleScanOff();
-        }
-    }
-
-    public void connect(BluetoothDevice bluetoothDevice){
-        if (mBleService != null) {
-            mBleService.BleConnectDev(bluetoothDevice);
-        }
-    }
-
-    public void close() {
-        if(mReceiver != null)
-            try {
-                context.unregisterReceiver(mReceiver);
-            } catch (IllegalArgumentException iae) {
-                Log.w(TAG, "IllegalArgumentException for mReceiver" + iae.toString());
-            }
-
-        try {
-        if(mConnection!= null)
-            context.unbindService(mConnection);
-        }catch (Exception ignored){
-
-        }
-    }
-
-    public void disconnect() {
-        Log.d(TAG,"Disconnect..");
-        if (mBleService != null) {
-            mBleService.BleDisconnect();
-        }
-    }
+    public static final UUID CONFIG_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     public void enable() {
-        BluetoothAdapter mBluetoothAdapter=((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
+        BluetoothAdapter mBluetoothAdapter = ((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
         if (mBluetoothAdapter == null) return;
         if (!mBluetoothAdapter.isEnabled()) {
             mBluetoothAdapter.enable();
         }
     }
 
-    public void disable() {
-        BluetoothAdapter mBluetoothAdapter=((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
-        if (mBluetoothAdapter == null) return;
-        if (mBluetoothAdapter.isEnabled()) {
-            mBluetoothAdapter.disable();
-        }
-    }
-
-    public boolean isEnabled() {
-        BluetoothAdapter mBluetoothAdapter = ((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
-        return mBluetoothAdapter != null && mBluetoothAdapter.isEnabled();
+    public MyBlueTooth() {
+        context = ApplicationWithBluetooth.getAppContext();
+        rxBleClient = ApplicationWithBluetooth.getRxBleClient();
     }
 
     public boolean hasSupport() {
@@ -243,44 +79,58 @@ public class MyBlueTooth {
         return mBluetoothAdapter != null;
     }
 
-    private void onReceiveMessage(Message msg) {
-        switch (msg.what) {
-            case MSG_CONNECTING:
-                break;
-
-            case MSG_CONNECTED:
-                Log.d(TAG, "[LOG]MSG_CONNECTED");
-                onReceiveListener.onReceived(msg);
-                break;
-
-            case MSG_DISCONNECTED:
-                Log.d(TAG, "[LOG]MSG_DISCONNECTED");
-                onReceiveListener.onReceived(msg);
-                break;
-
-            case MSG_ADV_CATCH_DEV:
-                Log.d(TAG, "[LOG]MSG_ADV_CATCH_DEV");
-                onReceiveListener.onReceived(msg);
-                break;
-            case MSG_DATA_RECV:
-                onReceiveListener.onReceived(msg);
-                break;
-            default:
-                break;
-        }
+    public RxBleDevice getDevice(String macAddress) {
+        return rxBleClient.getBleDevice(macAddress);
     }
 
-    private void onBleServiceConnected(IBinder service) {
-        Log.d(TAG, "[IN]onBleReceiveMessage");
-        mBleService = ((BleService.MyServiceLocalBinder)service).getService();
-        mBleService.setCurrentContext(context.getApplicationContext(), mBinder);
-        if(!isEnabled()) enable();
-        else
-            onConnectionListener.onConnected();
+    public boolean isConnected() {
+        return rxBleDevice != null && rxBleDevice.getConnectionState() == RxBleConnection.RxBleConnectionState.CONNECTED;
     }
 
-    public void writeCharacteristic(String writeString){
-        if(mBleService!=null)
-            mBleService.write(writeString);
+    public Observable<RxBleScanResult> observableScan(UUID uuid) {
+        return ApplicationWithBluetooth.getRxBleClient().scanBleDevices(uuid);
+    }
+
+    public Observable<RxBleConnection> observableConnect(String macAddress) {
+        rxBleDevice = rxBleClient.getBleDevice(macAddress);
+        return rxBleDevice
+                .establishConnection(context, false)
+                .doOnNext(rxBleConnectionTemp -> rxBleConnection = rxBleConnectionTemp);
+    }
+
+    public Observable<Integer> observableWrite(String writeString) {
+        return rxBleConnection.writeCharacteristic(CHARACTERISTIC_WRITE, getBytes(writeString))
+                .flatMap(new Func1<byte[], Observable<Observable<byte[]>>>() {
+                    @Override
+                    public Observable<Observable<byte[]>> call(byte[] bytes) {
+                        return rxBleConnection.setupNotification(CHARACTERISTIC_WRITE);
+                    }
+                }).flatMap(notificationObservable -> notificationObservable) // <-- Notification has been set up, now observe value changes.
+                .map(values -> {
+                    int value = 0;
+                    for (int i = 0; i < values.length; i++) {
+                        value += ((long) values[i] & 0xffL) << (8 * i);
+                    }
+                    Log.d(TAG, "values=" + value);
+                    return value;
+                });
+    }
+
+    public Observable<Integer> observableRead() {
+        return rxBleConnection.setupNotification(CHARACTERISTIC_WRITE)
+                .flatMap(notificationObservable -> notificationObservable) // <-- Notification has been set up, now observe value changes.
+                .map(values -> {
+                    int value = 0;
+                    for (int i = 0; i < values.length; i++) {
+                        value += ((long) values[i] & 0xffL) << (8 * i);
+                    }
+                    Log.d(TAG, "values=" + value);
+                    return value;
+                });
+    }
+
+    private byte[] getBytes(String writeString) {
+        BigInteger bigInteger = new BigInteger(writeString, 16);
+        return bigInteger.toByteArray();
     }
 }

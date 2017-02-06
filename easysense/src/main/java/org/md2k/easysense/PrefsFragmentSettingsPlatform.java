@@ -1,11 +1,8 @@
 package org.md2k.easysense;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.util.Log;
@@ -13,21 +10,22 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.polidea.rxandroidble.RxBleScanResult;
+import com.polidea.rxandroidble.exceptions.BleScanException;
+
 import org.md2k.datakitapi.source.METADATA;
-import org.md2k.datakitapi.source.platform.PlatformType;
 import org.md2k.easysense.bluetooth.MyBlueTooth;
-import org.md2k.easysense.bluetooth.OnConnectionListener;
-import org.md2k.easysense.bluetooth.OnReceiveListener;
 
 import java.util.ArrayList;
-import java.util.UUID;
+
+import rx.Observer;
+import rx.Subscription;
 
 /*
  * Copyright (c) 2015, The University of Memphis, MD2K Center
@@ -58,80 +56,60 @@ import java.util.UUID;
 
 public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
     public static final String TAG = PrefsFragmentSettingsPlatform.class.getSimpleName();
-    private static final long SCAN_PERIOD = 10000;
-    String deviceId = "", platformType;
-    Handler handler;
+    String deviceId = "";
     boolean isScanning;
     private ArrayAdapter<String> adapterDevices;
     private ArrayList<String> devices = new ArrayList<>();
+    private MyBlueTooth myBlueTooth;
+    public Subscription subscriptionScan;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        platformType = getActivity().getIntent().getStringExtra(PlatformType.class.getSimpleName());
-        myBlueTooth = new MyBlueTooth(getActivity(), onConnectionListener, onReceiveListener);
-    }
-
-    OnReceiveListener onReceiveListener = new OnReceiveListener() {
-        @Override
-        public void onReceived(Message msg) {
-            switch (msg.what) {
-                case MyBlueTooth.MSG_ADV_CATCH_DEV:
-                    BluetoothDevice device = (BluetoothDevice) msg.obj;
-                    String name;
-                    if (device.getName() == null || device.getName().length() == 0)
-                        name = device.getAddress();
-                    else
-                        name = device.getName() + " (" + device.getAddress() + ")";
-                    for (int i = 0; i < devices.size(); i++)
-                        if (devices.get(i).equals(name))
-                            return;
-                    devices.add(name);
-                    adapterDevices.notifyDataSetChanged();
-                    break;
-            }
-        }
-    };
-    private MyBlueTooth myBlueTooth;
-    OnConnectionListener onConnectionListener = new OnConnectionListener() {
-        @Override
-        public void onConnected() {
-            if (!myBlueTooth.isEnabled())
-                getActivity().finish();
-            else {
-                handler = new Handler();
-                addPreferencesFromResource(R.xml.pref_settings_platform);
-                setupListViewDevices();
-                setupPreferenceDeviceId();
-                setAddButton();
-                setCancelButton();
-                setScanButton();
-                scanLeDevice();
-            }
-
-        }
-
-        @Override
-        public void onDisconnected() {
-
-        }
-    };
-
-    private void scanLeDevice() {
-        // Stops scanning after a pre-defined scan period.
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                isScanning = false;
-                myBlueTooth.scanOff();
-                setScanButton();
-            }
-        }, SCAN_PERIOD);
-
-        isScanning = true;
-        myBlueTooth.disconnect();
-        myBlueTooth.scanOn(new UUID[]{Constants.DEVICE_SERVICE_UUID});
+        myBlueTooth = new MyBlueTooth();
+        addPreferencesFromResource(R.xml.pref_settings_platform);
+        setupListViewDevices();
+        setupPreferenceDeviceId();
+        setAddButton();
         setScanButton();
+        setCancelButton();
+        subscribeScan();
+    }
+    private void subscribeScan(){
+        isScanning = true;
+        Button button = (Button) getActivity().findViewById(R.id.button_2);
+        button.setText(R.string.button_scanning);
+        subscriptionScan=myBlueTooth.observableScan(MyBlueTooth.DEVICE_SERVICE_UUID)
+                .subscribe(new Observer<RxBleScanResult>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e(TAG,"scan .. .onCompleted()");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG,"scan error...e="+e.getMessage());
+                        if (e instanceof BleScanException) {
+                            handleBleScanException((BleScanException) e);
+                        }
+                    }
+
+                    @Override
+                    public void onNext(RxBleScanResult rxBleScanResult) {
+                        Log.e(TAG,"scan .. .onNext()");
+                        String macAddress = rxBleScanResult.getBleDevice().getMacAddress();
+                        String name = rxBleScanResult.getBleDevice().getName();
+                        if(name==null || name.length()==0)
+                            name=macAddress;
+                        else name+=" ("+macAddress+")";
+                        for (int i = 0; i < devices.size(); i++)
+                            if (devices.get(i).equals(name))
+                                return;
+                        devices.add(name);
+                        adapterDevices.notifyDataSetChanged();
+
+                    }
+                });
     }
 
     void setupListViewDevices() {
@@ -139,51 +117,25 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
                 android.R.id.text1, devices);
         ListView listViewDevices = (ListView) getActivity().findViewById(R.id.listView_devices);
         listViewDevices.setAdapter(adapterDevices);
-        listViewDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String item = ((TextView) view).getText().toString().trim();
-                Preference preference = findPreference("deviceId");
-                deviceId = item;
-                preference.setSummary(item);
-            }
+        listViewDevices.setOnItemClickListener((parent, view, position, id) -> {
+            String item = ((TextView) view).getText().toString().trim();
+            Preference preference = findPreference("deviceId");
+            deviceId = item;
+            preference.setSummary(item);
         });
     }
 
     private void setupPreferenceDeviceId() {
         Preference preference = findPreference("deviceId");
-        preference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                Log.d(TAG, preference.getKey() + " " + newValue.toString());
-                deviceId = newValue.toString().trim();
-                preference.setSummary(newValue.toString().trim());
-                return false;
-            }
+        preference.setOnPreferenceChangeListener((preference1, newValue) -> {
+            Log.d(TAG, preference1.getKey() + " " + newValue.toString());
+            deviceId = newValue.toString().trim();
+            preference1.setSummary(newValue.toString().trim());
+            return false;
         });
 
     }
 
-    private void setAddButton() {
-        final Button button = (Button) getActivity().findViewById(R.id.button_3);
-        button.setText(R.string.button_save);
-
-        button.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (deviceId == null || deviceId.equals(""))
-                    Toast.makeText(getActivity(), "!!! Device ID is missing !!!", Toast.LENGTH_LONG).show();
-                else {
-                    Intent returnIntent = new Intent();
-                    returnIntent.putExtra(PlatformType.class.getSimpleName(), platformType);
-                    returnIntent.putExtra(METADATA.DEVICE_ID, getDeviceId(deviceId));
-                    returnIntent.putExtra(METADATA.NAME, getName((deviceId)));
-                    getActivity().setResult(Activity.RESULT_OK, returnIntent);
-                    getActivity().finish();
-                }
-            }
-        });
-    }
 
     private String getName(String str) {
         if (str.endsWith(")")) {
@@ -201,42 +153,7 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
             return str;
     }
 
-    private void setCancelButton() {
-        final Button button = (Button) getActivity().findViewById(R.id.button_1);
-        button.setText(R.string.button_close);
 
-        button.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Intent returnIntent = new Intent();
-                getActivity().setResult(Activity.RESULT_CANCELED, returnIntent);
-                getActivity().finish();
-            }
-        });
-    }
-
-    private void setScanButton() {
-        try {
-            final Button button = (Button) getActivity().findViewById(R.id.button_2);
-            if (isScanning) {
-                button.setText(R.string.button_scanning);
-                button.setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        isScanning = false;
-                        myBlueTooth.scanOff();
-                    }
-                });
-            } else {
-                button.setText(R.string.button_scan);
-                button.setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        scanLeDevice();
-                    }
-                });
-            }
-        } catch (Exception ignored) {
-
-        }
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -261,12 +178,90 @@ public class PrefsFragmentSettingsPlatform extends PreferenceFragment {
 
     @Override
     public void onDestroy() {
-        if (isScanning) {
-            isScanning = false;
-            myBlueTooth.scanOff();
-        }
-        myBlueTooth.disconnect();
-        myBlueTooth.close();
+        unSubscribeScan();
         super.onDestroy();
     }
+    void unSubscribeScan(){
+        Log.d(TAG,"unSubscribeScan()...");
+        isScanning = false;
+        Button button = (Button) getActivity().findViewById(R.id.button_2);
+        button.setText(R.string.button_scan);
+
+        if(subscriptionScan!=null && !subscriptionScan.isUnsubscribed())
+            subscriptionScan.unsubscribe();
+    }
+    private void setAddButton() {
+        final Button button = (Button) getActivity().findViewById(R.id.button_3);
+        button.setText(R.string.button_text_save);
+
+        button.setOnClickListener(v -> {
+            if (deviceId == null || deviceId.equals(""))
+                Toast.makeText(getActivity(), "!!! Device ID is missing !!!", Toast.LENGTH_LONG).show();
+            else {
+                Intent returnIntent = new Intent();
+                returnIntent.putExtra(METADATA.DEVICE_ID, getDeviceId(deviceId));
+                returnIntent.putExtra(METADATA.NAME, getName((deviceId)));
+                getActivity().setResult(Activity.RESULT_OK, returnIntent);
+                getActivity().finish();
+            }
+        });
+    }
+
+    private void setScanButton() {
+        try {
+            final Button button = (Button) getActivity().findViewById(R.id.button_2);
+            button.setOnClickListener(v -> {
+                if(isScanning){
+                    unSubscribeScan();
+                }else{
+                    subscribeScan();
+
+                }
+            });
+        } catch (Exception ignored) {
+
+        }
+    }
+
+    private void setCancelButton() {
+        final Button button = (Button) getActivity().findViewById(R.id.button_1);
+        button.setText(R.string.button_close);
+
+        button.setOnClickListener(v -> {
+            Intent returnIntent = new Intent();
+            getActivity().setResult(Activity.RESULT_CANCELED, returnIntent);
+            unSubscribeScan();
+            getActivity().finish();
+        });
+    }
+    private void handleBleScanException(BleScanException bleScanException) {
+
+        switch (bleScanException.getReason()) {
+            case BleScanException.BLUETOOTH_NOT_AVAILABLE:
+                Toast.makeText(getActivity(), "Bluetooth is not available", Toast.LENGTH_SHORT).show();
+                getActivity().finish();
+                break;
+            case BleScanException.BLUETOOTH_DISABLED:
+//                Toast.makeText(getActivity(), "Enable bluetooth and try again", Toast.LENGTH_SHORT).show();
+                myBlueTooth.enable();
+                unSubscribeScan();
+                subscribeScan();
+                break;
+            case BleScanException.LOCATION_PERMISSION_MISSING:
+                Toast.makeText(getActivity(),
+                        "On Android 6.0 location permission is required. Implement Runtime Permissions", Toast.LENGTH_SHORT).show();
+                getActivity().finish();
+                break;
+            case BleScanException.LOCATION_SERVICES_DISABLED:
+                Toast.makeText(getActivity(), "Location services needs to be enabled on Android 6.0", Toast.LENGTH_SHORT).show();
+                getActivity().finish();
+                break;
+            case BleScanException.BLUETOOTH_CANNOT_START:
+            default:
+                Toast.makeText(getActivity(), "Unable to start scanning", Toast.LENGTH_SHORT).show();
+                getActivity().finish();
+                break;
+        }
+    }
+
 }

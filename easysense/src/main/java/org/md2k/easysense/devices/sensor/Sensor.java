@@ -43,7 +43,7 @@ public class Sensor {
     private DataSourceClient dataSourceClient;
     private Context context;
 
-    public Sensor(Context context, String dataSourceType) {
+    Sensor(Context context, String dataSourceType) {
         this.context = context;
         this.dataSourceType = dataSourceType;
     }

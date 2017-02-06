@@ -2,7 +2,6 @@ package org.md2k.easysense.devices.sensor;
 
 import android.content.Context;
 
-import org.md2k.datakitapi.datatype.DataTypeInt;
 import org.md2k.datakitapi.datatype.DataTypeJSONObject;
 import org.md2k.datakitapi.source.METADATA;
 import org.md2k.datakitapi.source.datasource.DataSourceBuilder;
@@ -52,7 +51,7 @@ public class Status extends Sensor {
                 .setMetadata(METADATA.DESCRIPTION, "Status of the EASYSENSE reading");
         return dataSourceBuilder;
     }
-    ArrayList<HashMap<String, String>> createDataDescriptors() {
+    private ArrayList<HashMap<String, String>> createDataDescriptors() {
         ArrayList<HashMap<String, String>> dataDescriptors = new ArrayList<>();
         HashMap<String, String> dataDescriptor = new HashMap<>();
         dataDescriptor.put(METADATA.NAME, "Status");

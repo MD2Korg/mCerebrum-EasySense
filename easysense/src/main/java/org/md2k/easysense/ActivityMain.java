@@ -6,12 +6,9 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 
-import org.md2k.datakitapi.messagehandler.ResultCallback;
 import org.md2k.datakitapi.source.platform.PlatformType;
 import org.md2k.utilities.UI.ActivityAbout;
 import org.md2k.utilities.UI.ActivityCopyright;
@@ -49,7 +46,6 @@ import java.util.List;
  */
 
 public class ActivityMain extends AppCompatActivity {
-    private static final String TAG = ActivityMain.class.getSimpleName();
     List<ViewContent> items = new ArrayList<>();
 
     @Override
@@ -58,15 +54,12 @@ public class ActivityMain extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
         PermissionInfo permissionInfo = new PermissionInfo();
-        permissionInfo.getPermissions(this, new ResultCallback<Boolean>() {
-            @Override
-            public void onResult(Boolean result) {
-                if (!result) {
-                    Toast.makeText(getApplicationContext(), "!PERMISSION DENIED !!! Could not continue...", Toast.LENGTH_SHORT).show();
-                    finish();
-                } else {
-                    load();
-                }
+        permissionInfo.getPermissions(this, result -> {
+            if (!result) {
+                Toast.makeText(getApplicationContext(), R.string.text_permission, Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+                load();
             }
         });
         if (getSupportActionBar() != null)
@@ -79,12 +72,9 @@ public class ActivityMain extends AppCompatActivity {
         readItems();
         AdapterEasySense adapterIntervention = new AdapterEasySense(this, items);
         gridview.setAdapter(adapterIntervention);
-        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent=new Intent(ActivityMain.this, ActivityEasySense.class);
-                startActivity(intent);
-            }
+        gridview.setOnItemClickListener((parent, view, position, id) -> {
+            Intent intent=new Intent(ActivityMain.this, ActivityEasySense.class);
+            startActivity(intent);
         });
     }
 

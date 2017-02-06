@@ -7,4 +7,7 @@
     <string name="button_next">Next</string>
     <string name="button_start">Start</string>
     <string name="retry">Retry</string>
+    <string name="button_text_save">Save</string>
+    <string name="text_reading">Reading...</string>
+    <string name="text_complete">Please keep the device in place until the reading is complete.</string>
 </resources>

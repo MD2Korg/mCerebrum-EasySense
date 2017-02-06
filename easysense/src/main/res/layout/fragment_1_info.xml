@@ -20,7 +20,8 @@
         android:gravity="center"
         android:textColor="@color/teal_700"
         android:textSize="28sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:text="Power On" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -35,7 +36,7 @@
             android:layout_gravity="center"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:src="@drawable/ic_easysense_teal_48dp"/>
+            android:src="@drawable/ic_power_teal_48dp"/>
     </LinearLayout>
     <TextView
         android:id="@+id/text_view_message"
@@ -45,7 +46,7 @@
         android:gravity="center"
         android:paddingTop="30dp"
         android:textSize="20sp"
-        />
+        android:text="Please TURN ON the chest sensor device and tap NEXT" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -54,7 +55,7 @@
         android:measureWithLargestChild="false"
         android:orientation="horizontal">
         <Button
-            android:id="@+id/button_2"
+            android:id="@+id/button_info_next"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="10dp"

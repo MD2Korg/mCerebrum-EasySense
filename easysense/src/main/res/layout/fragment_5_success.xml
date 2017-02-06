@@ -18,7 +18,7 @@
         android:layout_gravity="center"
         android:layout_marginBottom="20dp"
         android:gravity="center"
-        android:text="Slide 1 title"
+        android:text="!!! Thank you !!!"
         android:textColor="@color/teal_700"
         android:textSize="28sp"
         android:textStyle="bold" />
@@ -46,7 +46,7 @@
         android:layout_gravity="center"
         android:gravity="center"
         android:paddingTop="30dp"
-        android:text="Loooooooooooooooo[...]ooooooooong descreption here"
+        android:text="Chest measurement reading is complete. Please tap DONE."
         android:textSize="20sp" />
 
     <LinearLayout
