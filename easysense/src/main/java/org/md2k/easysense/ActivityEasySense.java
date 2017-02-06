@@ -1,5 +1,6 @@
 package org.md2k.easysense;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -145,8 +146,11 @@ public class ActivityEasySense extends AbstractActivityEasySense {
             @Override
             public void onError(Throwable e) {
                 Log.d(TAG,"onError()...e="+e.getMessage());
-                new Dialog().Error(ActivityEasySense.this, "Connection Error", "Could not connect with the device...Please try again", new String[]{"Ok"}, (which, result) -> {
-                }).show();
+                unSubscribeAll();
+                Toast.makeText(ActivityEasySense.this,"Could not connect with the device...Please try again",Toast.LENGTH_LONG).show();
+                setState(STATE_INFO);
+//                new Dialog().Error(ActivityEasySense.this, "Connection Error", "Could not connect with the device...Please try again", new String[]{"Ok"}, (which, result) -> {
+//                }).show();
             }
 
             @Override
@@ -155,8 +159,12 @@ public class ActivityEasySense extends AbstractActivityEasySense {
                 if (myBlueTooth.isConnected())
                     setState(STATE_CONNECTED);
                 else {
-                    new Dialog().Error(ActivityEasySense.this, "Connection Error", "Connection Error... Please try again", new String[]{"Ok"}, (which, result) -> {
-                    }).show();
+                    unSubscribeAll();
+                    Toast.makeText(ActivityEasySense.this,"Could not connect with the device...Please try again",Toast.LENGTH_LONG).show();
+                    setState(STATE_INFO);
+
+//                    new Dialog().Error(ActivityEasySense.this, "Connection Error", "Connection Error... Please try again", new String[]{"Ok"}, (which, result) -> {
+//                    }).show();
                 }
             }
         });
@@ -245,8 +253,8 @@ public class ActivityEasySense extends AbstractActivityEasySense {
     }
 
     void unSubscribeAll() {
-        unSubscribeConnect();
         unSubscribeWrite();
+        unSubscribeConnect();
     }
 
     void writeToDataKit(Status status) {
@@ -259,9 +267,14 @@ public class ActivityEasySense extends AbstractActivityEasySense {
             e.printStackTrace();
         }
     }
+    @Override
+    public void onBackPressed(){
+
+    }
     boolean UISettings() {
         setBarColor(ContextCompat.getColor(this, R.color.teal_500));
         setSeparatorColor(ContextCompat.getColor(this, R.color.deeporange_500));
+        showSkipButton(false);
         setSwipeLock(true);
         setDoneText("");
         setNextArrowColor(ContextCompat.getColor(this, R.color.teal_500));
