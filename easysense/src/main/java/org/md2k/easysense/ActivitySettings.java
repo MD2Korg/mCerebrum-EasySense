@@ -42,16 +42,13 @@ public class ActivitySettings extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         PermissionInfo permissionInfo = new PermissionInfo();
-        permissionInfo.getPermissions(this, new ResultCallback<Boolean>() {
-            @Override
-            public void onResult(Boolean result) {
-                if (!result) {
-                    Toast.makeText(getApplicationContext(), "!PERMISSION DENIED !!! Could not continue...", Toast.LENGTH_SHORT).show();
-                    finish();
-                } else {
-        getFragmentManager().beginTransaction().replace(R.id.layout_preference_fragment,
-                new PrefsFragmentSettings()).commit();
-                }
+        permissionInfo.getPermissions(this, result -> {
+            if (!result) {
+                Toast.makeText(getApplicationContext(), "!PERMISSION DENIED !!! Could not continue...", Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+    getFragmentManager().beginTransaction().replace(R.id.layout_preference_fragment,
+            new PrefsFragmentSettings()).commit();
             }
         });
 

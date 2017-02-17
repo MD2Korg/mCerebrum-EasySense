@@ -47,11 +47,14 @@ public class Fragment_1_Info extends Fragment_Base {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_1_info, container, false);
+        Button button1 = (Button) v.findViewById(R.id.button_info_cancel);
+        button1.setOnClickListener(v12 -> activity.setState(ActivityEasySense.STATE_SKIP));
         Button button2 = (Button) v.findViewById(R.id.button_info_next);
         button2.setOnClickListener(v1 -> activity.setState(ActivityEasySense.STATE_CONNECT));
         Drawable drawable = Icon.get(getActivity(), Icon.Id.POWER, ContextCompat.getColor(getActivity(),R.color.teal_500), Icon.Size.EXTRA_LARGE);
         ImageView image= (ImageView) v.findViewById(R.id.image_view_image);
         image.setImageDrawable(drawable);
+
         return v;
     }
 }

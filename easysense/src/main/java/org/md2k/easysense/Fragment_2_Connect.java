@@ -54,7 +54,7 @@ public class Fragment_2_Connect extends Fragment_Base {
         View v = inflater.inflate(R.layout.fragment_2_connect, container, false);
 
         Button button1 = (Button) v.findViewById(R.id.button_1);
-        button1.setOnClickListener(v1 -> activity.setState(ActivityEasySense.STATE_CONNECT_RETRY));
+        button1.setOnClickListener(v1 -> activity.setState(ActivityEasySense.STATE_SKIP));
 
         return v;
     }
